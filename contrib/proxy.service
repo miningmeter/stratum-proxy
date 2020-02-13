@@ -1,0 +1,22 @@
+[Unit]
+Description=Stratum proxy.
+Documentation=https://miningmeter.com/
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/proxy \
+        -stratum.addr="<host>:<port>" \
+        -web.addr=":8080" \
+        -syslog=true \
+        -db.path=/usr/share/proxy/proxy.db
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=proxy
+
+Restart=on-failure
+
+User=stratum-proxy
+
+[Install]
+WantedBy=multi-user.target
