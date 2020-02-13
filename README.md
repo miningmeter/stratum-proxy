@@ -17,7 +17,7 @@ REST API доступно по адресу `http://<web.addr>/api/v1` прок�
 ```json
 {
     "pool": "<host>:<port>",
-    "user": "<username>"
+    "user": "<username>",
     "password": "<password>"
 }
 ```
