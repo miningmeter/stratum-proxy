@@ -1,42 +1,45 @@
-# Этапы работы.
-* [x] Упростить стек.
-* [x] Добавить базу данных.
-* [x] Добавить поддержку sha256.
-* [ ] #7 Убрать системные метрики Prometheus.
-* [x] Залечить баги.
-    * [x] #1 Не происходит отключения при некорректной авторизации.
-    * [x] #2 Гонка при отключении пула если одновременно с отключением приходит команда.
-    * [x] #3 Ошибка декодирования bool при mining.authorize.
-    * [x] #4 Invalid miner subscribe response.
-    * [x] #5 Не находится уже зарегистрированный пользователь.
-    * [x] #6 При синхронизации отдавать правильный Extranonce2Size.
+# Stratum proxy
+* Поддержка разных алгоритмов майнинга через один порт.
+* Поддержка майнинга несколькими майнерами на 1 аккаунт.
+* Счетчики шар для каждого майнера, пользователя, пула и алгоритма.
+* Хэшрейт каждого майнера.
+* Автоматическое определение алгоритма майнинга для правильного расчета хэшрейта.
+* Регистрация на прокси через API.
+* Метрики в стандартном формате Prometheus.
 
-# Команды тестирования mining.configure.
-Майнер без поддержки `mining.configure`.
-```bash
-echo -e '{"id": 1, "method": "mining.subscribe", "params": ["cpuminer-multi/1.3.6"]}\n{"id": 2, "method": "mining.authorize", "params": ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]}\n' | nc 127.0.0.1 9332
-```
+# Поддерживаемые пулы.
+Автоматическое определение алгоритма майнинга происходит на основе пары <pool_host>:<pool_port>, поэтому прокси поддерживает подключение только к определенному набору пулов, сохраненному в базе данных. API для расширения списка алгоритмов и пулов пока отсутствует.
 
-Майнер без поддержки `mining.configure`, но с поддержкой `mining.extranonce.subscribe`.
-```bash
-echo -e '{"id": 1, "method": "mining.subscribe", "params": ["cpuminer-multi/1.3.6"]}\n{"id": 2, "method": "mining.authorize", "params": ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]}\n{"id": 3, "method": "mining.extranonce.subscribe", "params": []}\n' | nc 127.0.0.1 9332
+# REST API управления.
+REST API доступно по адресу `http://<web.addr>/api/v1` прокси и сейчас в API есть только 1 команда для регистрации учетных данных для подключения к пулу.
+### POST /users
+Передаваемые данные:
+```json
+{
+    "pool": "<host>:<port>",
+    "user": "<username>"
+    "password": "<password>"
+}
 ```
+Ответ придет в виде:
+```json
+{
+    "name": "<name>",
+    "error": ""
+}
+```
+Полученный `name` используется для того, чтобы прокси опознал подключение и подключился к правильному пулу с правильным аккаунтом. Строка подключения к прокси будет выглядеть так:
+```
+-o stratum+tcp://<proxy_host>:<proxy_stratum_port> -u <name> -p <любой, игнорируется>
+```
+Учетные записи не удаляются (в дальнейшем планируется сделать автоматическое удаление после периода бездействия).
 
-Майнер с поддержкой только расширения `subscribe-extranonce` в `mining.configure`.
-```bash
-echo -e '{"id": 1, "method": "mining.subscribe", "params": ["cpuminer-multi/1.3.6"]}\n{"id": 2, "method": "mining.authorize", "params": ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]}\n{"id": 3, "method": "mining.configure", "params": [["subscribe-extranonce"],{}]}\n' | nc 127.0.0.1 9332
-```
-
-Майнер с поддержкой только расширения `version-rolling` в `mining.configure`.
-```bash
-echo -e '{"id": 1, "method": "mining.subscribe", "params": ["cpuminer-multi/1.3.6"]}\n{"id": 2, "method": "mining.authorize", "params": ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]}\n{"id": 3, "method": "mining.configure", "params": [["version-rolling"],{"version-rolling.mask":"ffffffff", "version-rolling.min-bit-count":2}]}\n' | nc 127.0.0.1 9332
-```
-
-Майнер с поддержкой обоих расширений в `mining.configure`.
-```bash
-echo -e '{"id": 1, "method": "mining.subscribe", "params": ["cpuminer-multi/1.3.6"]}\n{"id": 2, "method": "mining.authorize", "params": ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]}\n{"id": 3, "method": "mining.configure", "params": [["subscribe-extranonce", "version-rolling"],{"version-rolling.mask":"ffffffff", "version-rolling.min-bit-count":2}]}\n' | nc 127.0.0.1 9332
-```
-Майнер, выполняющий первой командой `mining.configure`.
-```bash
-echo -e '{"id": 1, "method": "mining.configure", "params": [["version-rolling"],{"version-rolling.mask":"ffffffff", "version-rolling.min-bit-count":2}]}\n' | nc 127.0.0.1 9332
-```
+# Доступные метрики.
+Метрики доступны по адресу `http://<web.addr>/metrics` и включают в себя набор стандартных метрик `Prometheus` и кастомные метрики для мониторинга работы воркеров.
+## Список кастомных метрик.
+* `proxy_worker_up{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>"}` - статус воркера. Появляется при подключении воркера к прокси.
+* `proxy_pool_up{"proxy"="<proxy_host>:<proxy_port>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - статус пула. Появляется при подключении прокси к пулу.
+* `proxy_worker_sended{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - счетчик шар, отправленных майнером.
+* `proxy_worker_accepted{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - счетчик шар, принятых пулом.
+* `proxy_worker_speed{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - скорость воркера в хэшах в секунду. Окно измерения хэшрейта - 5 минут, интервал измерения  - 1 минута.
+* `proxy_worker_difficulty{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - сложность, установленная пулом для воркера.
