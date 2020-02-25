@@ -336,9 +336,6 @@ func (s *MiningAuthorizeRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
 		return nil, fmt.Errorf("Empty user in mining.authorize")
 	}
-	if s.password == "" {
-		return nil, fmt.Errorf("Empty password in mining.authorize")
-	}
 	return []interface{}{s.user, s.password}, nil
 }
 
@@ -362,9 +359,6 @@ func (s *MiningAuthorizeRequest) Decode(data []interface{}) error {
 	password, ok := data[1].(string)
 	if !ok {
 		return errors.New("Invalid password type in mining.authorize")
-	}
-	if password == "" {
-		return errors.New("Empty password in mining.authorize")
 	}
 	s.password = password
 
