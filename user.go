@@ -59,9 +59,6 @@ func (u *User) Init(pool string, user string, password string) error {
 	if user == "" {
 		return errors.New("empty user on init user")
 	}
-	if password == "" {
-		return errors.New("empty password on init user")
-	}
 	// Генерируем имя пользователя.
 	name := ""
 	for t := time.Now().Unix(); t > 0; t-- {
