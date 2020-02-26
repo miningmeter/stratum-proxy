@@ -49,6 +49,8 @@ var (
 	}
 	// SQLite db path.
 	dbPath = "proxy.db"
+	// Metrics proxy tag.
+	tag = ""
 )
 
 /*
@@ -59,6 +61,7 @@ func main() {
 	flag.StringVar(&webAddr, "web.addr", "127.0.0.1:8080", "Address and port for web server and metrics")
 	flag.BoolVar(&syslog, "syslog", false, "On true adapt log to out in syslog, hide date and colors")
 	flag.StringVar(&dbPath, "db.path", "proxy.db", "Filepath for SQLite database")
+	flag.StringVar(&tag, "metrics.tag", stratumAddr, "Prometheus metrics proxy tag")
 	flag.Parse()
 
 	if syslog {

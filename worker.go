@@ -271,9 +271,9 @@ func (w *Worker) Connect() error {
 	}
 
 	// Activating of the metrics.
-	mWorkerUp.WithLabelValues(stratumAddr, wAddr, wUser).Set(1)
-	mPoolUp.WithLabelValues(stratumAddr, wHash, pAddr).Set(1)
-	mDifficulty.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(0)
+	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
+	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
 
 	LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
 	status = w.SyncExtensions()
@@ -483,8 +483,8 @@ func (w *Worker) Restore(id string) error {
 	w.mutex.Unlock()
 
 	// Activating of metrics.
-	mWorkerUp.WithLabelValues(stratumAddr, wAddr, wUser).Set(1)
-	mDifficulty.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
+	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
 
 	go w.Death()
 
@@ -578,11 +578,11 @@ func (w *Worker) UpdateHashrate() {
 		w.mutex.RUnlock()
 
 		if wClient == nil {
-			mSpeed.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)
+			mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			break
 		}
 		if pAddr != "" {
-			mSpeed.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(hashrate)
+			mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
 		}
 		LogInfo("%s : hashrate: %.0f h/s", sID, wAddr, hashrate)
 
@@ -636,7 +636,7 @@ func (w *Worker) Disconnect() {
 		pClient.Close()
 
 		// The deleting of metrics.
-		ok := mPoolUp.DeleteLabelValues(stratumAddr, wHash, pAddr)
+		ok := mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
 		if !ok {
 			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
 		}
@@ -676,13 +676,13 @@ func (w *Worker) Death() {
 		if pAddr != "" {
 			// Removing of metrics.
 
-			mSended.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)
-			mAccepted.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)
-			ok := mDifficulty.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)
+			mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+			mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+			ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			if !ok {
 				LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
 			}
-			ok = mWorkerUp.DeleteLabelValues(stratumAddr, wAddr, wUser)
+			ok = mWorkerUp.DeleteLabelValues(tag, wAddr, wUser)
 			if !ok {
 				LogError("%s : error delete proxy_worker_up metric.", sID, wAddr)
 			}

@@ -229,12 +229,12 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	}
 
 	// The increasing the counter of the accepted shares.
-	mSended.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Inc()
+	mSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
 
 	// If the pool has validated the work - we are increasing
 	// the counter of the accepted shares.
 	if *res {
-		mAccepted.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Inc()
+		mAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
 		w.IncShares()
 		LogInfo("%s < %s", sID, wAddr, strconv.FormatBool(*res))
 	} else {
@@ -347,7 +347,7 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 		if wClient != nil {
 			wClient.Notify("mining.set_difficulty", params)
 			LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
-			mDifficulty.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(difficulty)
+			mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
 		}
 	}
 
