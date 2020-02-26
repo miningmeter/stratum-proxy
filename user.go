@@ -1,5 +1,5 @@
 /*
-Класс пользователя.
+User.
 */
 package main
 
@@ -13,7 +13,7 @@ import (
 )
 
 /*
-User - учетная запись пользователя.
+User - User.
 */
 type User struct {
 	mutex    sync.RWMutex
@@ -27,9 +27,9 @@ type User struct {
 }
 
 /*
-GetName -  получение имени пользователя.
+GetName - getting of user name.
 
-@return string имя пользователя
+@return string user name
 */
 func (u *User) GetName() string {
 	u.mutex.RLock()
@@ -39,7 +39,7 @@ func (u *User) GetName() string {
 }
 
 /*
-Touch - обновление времени последнего использования.
+Touch - updating of last time used.
 */
 func (u *User) Touch() {
 	u.mutex.Lock()
@@ -48,9 +48,9 @@ func (u *User) Touch() {
 }
 
 /*
-Init - инициализация пользователя.
+Init - initializing of user.
 
-@return error если произошла ошибка
+@return error
 */
 func (u *User) Init(pool string, user string, password string) error {
 	if !ValidateAddr(pool, true) {
@@ -59,7 +59,7 @@ func (u *User) Init(pool string, user string, password string) error {
 	if user == "" {
 		return errors.New("empty user on init user")
 	}
-	// Генерируем имя пользователя.
+	// Generating of user name.
 	name := ""
 	for t := time.Now().Unix(); t > 0; t-- {
 		h := md5.New()

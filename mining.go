@@ -1,5 +1,5 @@
 /*
-Методы для JSON-RPC сервера и клиента.
+Handlers for JSON-RPC server and client.
 */
 package main
 
@@ -13,21 +13,21 @@ import (
 )
 
 /*
-Mining - класс взаимодействия с майнером и пулом.
+Mining - the communicating with worker and pool.
 */
 type Mining struct{}
 
 /*
-Subscribe - обработка метода mining.subscribe от майнера. Подключает майнер к прокси.
+Subscribe - the handler of mining.subscribe from the worker. He's connecting worker to proxy.
 
-@param *rpc2.Client  client клиент
-@param []interface{} params переданные параметры
-@param *interface{}  res    результат, отправляемый майнеру
+@param *rpc2.Client  client
+@param []interface{} params
+@param *interface{}  res    result, sent to the worker
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interface{}) error {
-	// Находим воркера, связанного с данным подключением.
+	// The getting of the worker, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
 	sID := w.GetID()
@@ -70,7 +70,7 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 	extranonce2size := w.pool.extranonce2size
 	w.mutex.RUnlock()
 
-	// Отправляем майнеру mining.subscribe response.
+	// The sending mining.subscribe response message to the worker.
 	response := MiningSubscribeResponse{map[string]string{"mining.notify": wID}, extranonce1, extranonce2size}
 	data, err := response.Encode()
 	*res = &data
@@ -89,19 +89,19 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 }
 
 /*
-Authorize - обработка метода mining.authorize от майнера. Получает данные,
-к какому пулу подключить майнера, подключает к пулу, передает последнюю
-сложность и работу майнеру.
+Authorize - the handler of mining.authorize from the worker. He's detect the pool
+for connect to the worker, connecting to the pool, sending the last difficulty
+and the job.
 
-@param *rpc2.Client  client клиент
-@param []interface{} params переданные параметры
-@param *bool         res    результат, отправляемый майнеру
+@param *rpc2.Client  client
+@param []interface{} params
+@param *bool         res    result, sent to the worker
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) error {
 	*res = false
-	// Получаем майнера, связанного с подключением.
+	// The getting of the worker, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
 	w.mutex.RLock()
@@ -112,23 +112,23 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 
 	LogInfo("%s > mining.authorize", sID, wAddr)
 
-	// Скрещивание ежа с ужом. Проверка сразу и подписки и повторной авторизации.
+	// The checking of the subscription and the double authorization.
 	sErr, err := mining.checkAuthorized(w)
 	if err != nil && sID == "" {
 		LogError("%s : authorize error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
 
-	// Отправляем майнеру большую сложность. Если этого не сделать, то при тормозах авторизации
-	// и подключения майнер начнет заваливать прокси шарами с низкой сложностью и после некоторого
-	// количества отбивок от прокси майнер отключается.
+	// The sending of high difficulty to the worker. If this is not done, then with authorization and
+	// connection brakes, the worker will begin to flood proxy with shares with low difficulty and after
+	// a certain number of errors from the proxy, the worker will disconnect.
 	client.Notify("mining.set_difficulty", wDifficulty)
 	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	auth := new(MiningAuthorizeRequest)
 	auth.Decode(params)
 
-	// Авторизуем майнера.
+	// The authorizing of the miner.
 	err = w.Auth(auth.user, auth.password)
 	if err != nil {
 		LogError("%s < false: %s", sID, wAddr, err.Error())
@@ -143,19 +143,19 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 }
 
 /*
-Submit - обработка метода mining.submit от майнера. Принимает от майнера
-найденный nonce и отправляет пулу. Возвращает майнеру статус валидации.
+Submit - the handler of mining.submit from the worker. The taking the nonce from the worker and
+sending it to the pool. Return to the worker a validation status.
 
-@param *rpc2.Client  client клиент
-@param []interface{} params переданные параметры
-@param *bool         res    результат, отправляемый майнеру
+@param *rpc2.Client  client
+@param []interface{} params
+@param *bool         res    result, sent to the worker
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) error {
 	var sErr error
 	*res = false
-	// Получаем майнера, связанного с подключением.
+	// The getting of the worker, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
 
@@ -176,7 +176,7 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 		return errors.New(sErr)
 	}
 
-	// получаем данные майнера и пула.
+	// The getting of the data of the worker and the pool.
 	if pAddr == "" {
 		LogError("%s : ignore share without pool", sID, wAddr)
 		return errors.New("[20, \"Other/Unknown\", null]")
@@ -197,7 +197,7 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 		LogInfo("%s > mining.submit: %s, %s", sID, wAddr, s.job, s.nonce)
 	}
 
-	// Проверяем шару на совместимость с расширениями.
+	// The checking compatability of the share and the extensions of the worker.
 	wRoll, wIsRoll := wExt["version-rolling"]
 	pRoll, pIsRoll := pExt["version-rolling"]
 	if isRoll && (!wIsRoll || !wRoll.(bool)) {
@@ -222,19 +222,17 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 
 	LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
 
-	// Если работа валидна по мнению пула - увеличиваем счетчик
-	// принятых шар.
 	if *res {
 		LogInfo("%s > %s", sID, pAddr, strconv.FormatBool(*res))
 	} else {
 		LogError("%s > %s", sID, pAddr, strconv.FormatBool(*res))
 	}
 
-	// Увеличиваем счетчик отправленных шар.
+	// The increasing the counter of the accepted shares.
 	mSended.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Inc()
 
-	// Если работа валидна - увеличиваем счетчик валидных шар, принятых
-	// прокси.
+	// If the pool has validated the work - we are increasing
+	// the counter of the accepted shares.
 	if *res {
 		mAccepted.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Inc()
 		w.IncShares()
@@ -247,13 +245,13 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 }
 
 /*
-ExtranonceSubscribe - обработка метода mining.extranonce.subscribe от майнера.
+ExtranonceSubscribe - the handler of mining.extranonce.subscribe from the worker.
 
-@param *rpc2.Client  client клиент
-@param []interface{} params переданные параметры
-@param *bool  res    результат, отправляемый майнеру
+@param *rpc2.Client  client
+@param []interface{} params
+@param *bool  res           result, sent to the worker
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, res *bool) error {
 	*res = true
@@ -271,7 +269,7 @@ func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, re
 
 	LogInfo("%s < true", sID, wAddr)
 
-	// Взводим соответствующий флаг у майнера.
+	// The adding a subscribe-extranonce extension on the worker.
 	w.mutex.Lock()
 	if _, ok := w.extensions["subscribe-extranonce"]; ok {
 		w.extensions["subscribe-extranonce"] = true
@@ -282,16 +280,16 @@ func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, re
 }
 
 /*
-Notify - обработка метода mining.notify от пула. Принимает от пула job.
+Notify - the handler of mining.notify from the pool. He's receiving job.
 
-@param *rpc2.Client   client клиент
-@param []interface{}  params переданные параметры
-@param *[]interface{} res    ответ, отправляемый пулу
+@param *rpc2.Client
+@param []interface{}
+@param *[]interface{} res result, sent to the pool
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) Notify(client *rpc2.Client, params []interface{}, res *interface{}) error {
-	// Получаем пул, связанный с соединением.
+	// The getting of the pool, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
 	jobID := params[0].(string)
@@ -313,22 +311,21 @@ func (*Mining) Notify(client *rpc2.Client, params []interface{}, res *interface{
 }
 
 /*
-SetDifficulty - обработка метода mining.set_difficulty от пула. Принимает от пула
-сложность и раздает его подключенным майнерам.
+SetDifficulty -  the handler of mining.set_difficulty from the pool. He's receiving difficulty
+from the pool and sending it to the worker.
 
-@param *rpc2.Client   client     клиент
-@param []interface{}  params     переданные параметры
-@param *[]interface{} res ответ, отправляемый пулу
+@param *rpc2.Client   client
+@param []interface{}  params
+@param *[]interface{} res    result, sent to the pool
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *interface{}) error {
-	// Получаем пул, связанный с соединением.
+	// The getting of the pool, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
 	difficulty := params[0].(float64)
 
-	// Получаем список майнеров, подключенных к пулу, и алгоритм.
 	w.mutex.RLock()
 	sID := w.id
 	wAddr := w.addr
@@ -338,17 +335,15 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 	pAddr := w.pool.addr
 	w.mutex.RUnlock()
 
-	// Устанавливаем метрику сложность на соответствующем пуле и
-	// алгоритме.
-
+	// The saving of difficulty in the metrics.
 	if wDifficulty != difficulty {
 		LogInfo("%s > mining.set_difficulty: %f", sID, pAddr, difficulty)
-		// Сохраняем сложность.
 		w.mutex.Lock()
 		w.difficulty = difficulty
 		wClient := w.client
 		w.mutex.Unlock()
 
+		// The sending of difficulty to the linked worker.
 		if wClient != nil {
 			wClient.Notify("mining.set_difficulty", params)
 			LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
@@ -360,13 +355,14 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 }
 
 /*
-Configure - обработка метода mining.configure от майнера. Передает пулу поддерживаемые расширения.
+Configure - the handler of mining.configure from the worker. He's sent to the pool
+the extensions that the worker is supporting.
 
-@param *rpc2.Client  client клиент
-@param []interface{} params переданные параметры
-@param *interface{}  res    результат, отправляемый майнеру
+@param *rpc2.Client  client
+@param []interface{} params
+@param *interface{}  res    result, sent to the worker
 
-@return error|nil ошибка
+@return error|nil
 */
 func (*Mining) Configure(client *rpc2.Client, params []interface{}, res *interface{}) error {
 	temp, _ := client.State.Get("worker")

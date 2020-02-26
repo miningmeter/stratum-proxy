@@ -9,12 +9,12 @@ import (
 )
 
 /*
-ValidateAddr - валидация адреса.
+ValidateAddr - the validating of address.
 
-@param string addr   адрес в формате addr:port.
-@param bool   canDNS addr может быть DNS именем.
+@param string addr   the address in the format addr:port.
+@param bool   canDNS addr can be a DNS name.
 
-@return bool Если адрес валидный.
+@return bool If tha address is valid.
 */
 func ValidateAddr(addr string, canDNS bool) bool {
 	regex := "^[\\d\\.]+:\\d{1,5}$"
@@ -43,11 +43,11 @@ func ValidateAddr(addr string, canDNS bool) bool {
 }
 
 /*
-ValidateDNS - валидация адреса DNS.
+ValidateDNS - the validating of the DNS name.
 
-@param string dns DNS-имя для проверки.
+@param string dns DNS name for a checking.
 
-@return bool если имя верное.
+@return bool If the name is valid.
 */
 func ValidateDNS(dns string) bool {
 	matched, err := regexp.MatchString("^([a-z0-9]+(-[a-z0-9]+)*\\.)+[a-z]{2,}$", dns)
@@ -59,11 +59,11 @@ func ValidateDNS(dns string) bool {
 }
 
 /*
-ValidateIPV4 - валидация IPV4.
+ValidateIPV4 - the validating of the IPV4.
 
-@param string ipv4 IP-адрес.
+@param string ipv4 IP-address.
 
-@return bool Если IP-адрес валидный.
+@return bool If the IP-address is valid.
 */
 func ValidateIPV4(ipv4 string) bool {
 	matched, err := regexp.MatchString("^(?:\\d{1,3}\\.){3}\\d{1,3}$", ipv4)
@@ -87,9 +87,9 @@ func ValidateIPV4(ipv4 string) bool {
 }
 
 /*
-ValidatePort - валидация порта.
+ValidatePort - the validating of the port.
 
-@return bool Если порт валидный.
+@return bool If the port is valid.
 */
 func ValidatePort(port string) bool {
 	matched, err := regexp.MatchString("^\\d{1,5}$", port)
@@ -107,18 +107,18 @@ func ValidatePort(port string) bool {
 }
 
 /*
-ValidateHexString - валидация 16-тиричной строки произвольной ненулевой длины.
+ValidateHexString - the validating of the hexademical string.
 
-@param string str строка для проверки.
+@param string str the string for validating.
 
-@return bool Если строка валидна.
+@return bool If the string is valid.
 */
 func ValidateHexString(str string) bool {
 	return rHexStr.MatchString(str)
 }
 
 /*
-LogInfo - вывод информационной строки лога.
+LogInfo - the informational log.
 */
 func LogInfo(format, sid string, v ...interface{}) {
 	header := make([]byte, 0, 0)
@@ -136,7 +136,7 @@ func LogInfo(format, sid string, v ...interface{}) {
 }
 
 /*
-LogError - вывод строки лога c ошибкой.
+LogError - the error log.
 */
 func LogError(format, sid string, v ...interface{}) {
 	header := ""

@@ -1,5 +1,5 @@
-# База данных.
-## Схема.
+# Database.
+## Scheme.
 ```sqlite
 BEGIN;
 
@@ -48,7 +48,7 @@ CREATE UNIQUE INDEX "pool_user_password" ON "users"( "pool_id", "user" COLLATE N
 
 COMMIT;
 ```
-## Данные.
+## Data.
 ```sqlite
 BEGIN;
 

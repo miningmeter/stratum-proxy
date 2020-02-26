@@ -1,5 +1,5 @@
 /*
-Stratum-прокси с внешним управлением.
+Stratum-proxy with external manage.
 */
 
 package main
@@ -21,38 +21,38 @@ import (
 )
 
 /*
-VERSION - версия прокси.
+VERSION - proxy version.
 */
 const VERSION = "0.01"
 
 var (
-	// Интерфейс обработки команд от майнера и пула.
+	// Processing commangds from worker and pool.
 	mining Mining
-	// Воркеры.
+	// Workers.
 	workers Workers
-	// База данных.
+	// Db of users credentials.
 	db Db
-	// Stratum хост и порт.
+	// Stratum endpoint.
 	stratumAddr = "127.0.0.1:9332"
-	// API хост и порт.
+	// API endpoint.
 	webAddr = "127.0.0.1:8080"
-	// Вывод в syslog.
+	// Out to syslog.
 	syslog = false
 	// GitCommit - Git commit for build
 	GitCommit string
-	// Скомпилированная регулярка для проверки шестнадцатиричных строк.
+	// Compiled regexp for hexademical checks.
 	rHexStr = regexp.MustCompile(`^[\da-fA-F]+$`)
-	// Расширения, поддерживаемые прокси.
+	// Extensions that supported by the proxy.
 	sExtensions = []string{
 		"subscribe-extranonce",
 		"version-rolling",
 	}
-	// Путь к базе данных SQLite.
+	// SQLite db path.
 	dbPath = "proxy.db"
 )
 
 /*
-Главная функция.
+Main function.
 */
 func main() {
 	flag.StringVar(&stratumAddr, "stratum.addr", "127.0.0.1:9332", "Address and port for stratum")
@@ -66,34 +66,34 @@ func main() {
 	}
 	LogInfo("proxy : version: %s-%s", "", VERSION, GitCommit)
 
-	// Инициализируем базу данных.
+	// Initializing of database.
 	if !db.Init() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	// Инициализируем внутренние хранилища.
+	// Inintializing of internal storage.
 	workers.Init()
 
-	// Инициализируем API и метрики.
+	// Initializing of API and metrics.
 	LogInfo("proxy : web server serve on: %s", "", webAddr)
-	// Пользователи.
+	// Users.
 	http.Handle("/api/v1/users", &API{})
-	// Метрики.
+	// Metrics.
 	http.Handle("/metrics", promhttp.Handler())
 	go http.ListenAndServe(webAddr, nil)
 
-	InitMinerServer()
+	InitWorkerServer()
 
 	os.Exit(0)
 }
 
 /*
-InitMinerServer - инициализация сервера для подключения майнеров.
+InitWorkerServer - initializing of server for workers connects.
 */
-func InitMinerServer() {
-	// Запускаем JSON-RPC сервер.
+func InitWorkerServer() {
+	// Launching of JSON-RPC server.
 	server := rpc2.NewServer()
-	// Подписываем его на необходимые события.
+	// Subscribing of server to needed handlers.
 	server.Handle("mining.subscribe", mining.Subscribe)
 	server.Handle("mining.authorize", mining.Authorize)
 	server.Handle("mining.submit", mining.Submit)
@@ -104,10 +104,9 @@ func InitMinerServer() {
 
 	LogInfo("proxy : listen on: %s", "", stratumAddr)
 
-	// Цикл ожидания подключений.
+	// Waiting of connections.
 	link, _ := net.Listen("tcp", stratumAddr)
 	for {
-		// Ждем подключения.
 		conn, err := link.Accept()
 		if err != nil {
 			LogError("proxy : accept error: %s", "", err.Error())
@@ -119,24 +118,24 @@ func InitMinerServer() {
 }
 
 /*
-WaitWorker - ожидание инициализации воркера.
+WaitWorker - waiting of worker init.
 
-@param net.Conn     conn   - соединение.
-@param *rpc2.Server server - сервер.
+@param net.Conn     conn   - connection.
+@param *rpc2.Server server - server.
 */
 func WaitWorker(conn net.Conn, server *rpc2.Server) {
 	addr := conn.RemoteAddr().String()
 	LogInfo("%s : try connect to proxy", "", addr)
-	// Инициализируем воркер.
+	// Initializing of worker.
 	w := &Worker{addr: addr}
-	// Связываем JSON-RPC соединение с воркером.
+	// Linking of JSON-RPC connection to worker.
 	state := rpc2.NewState()
 	state.Set("worker", w)
-	// Запускаем обработчик соединения в отдельном потоке.
+	// Running of connection handler in goroutine.
 	go server.ServeCodecWithState(stratumrpc.NewStratumCodec(conn), state)
-	// Ждем 3 секунды инициализации воркера, которая начнется при отправке воркером команд.
+	// Waiting 3 seconds of worker initializing, which will begin when the worker sends the commands.
 	<-time.After(3 * time.Second)
-	// Если воркер не инициализировался - убиваем соединение.
+	// If worker not initialized, we kill connection.
 	if w.GetID() == "" {
 		LogInfo("%s : disconnect by silence", "", addr)
 		conn.Close()
@@ -144,10 +143,10 @@ func WaitWorker(conn net.Conn, server *rpc2.Server) {
 }
 
 /*
-Connect - обработка подключения воркера к прокси.
+Connect - processing of connecting worker to proxy.
 
-@param *rpc2.Client client указатель на подключенный клиент
-@param *Worker w указатель на подключаемый воркер
+@param *rpc2.Client client pointer to connecting client
+@param *Worker w pointer to connecting worker
 */
 func Connect(client *rpc2.Client, w *Worker) {
 	wAddr := w.GetAddr()
@@ -161,9 +160,9 @@ func Connect(client *rpc2.Client, w *Worker) {
 }
 
 /*
-Disconnect - обработка отключения майнера от прокси.
+Disconnect - processing of disconnecting worker to proxy.
 
-@param *rpc2.Client client указатель на отключаемый клиент
+@param *rpc2.Client client pointer to disconnecting client
 */
 func Disconnect(client *rpc2.Client) {
 	temp, _ := client.State.Get("worker")

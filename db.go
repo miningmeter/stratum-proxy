@@ -91,18 +91,18 @@ var (
 )
 
 /*
-Db - база данных прокси.
+Db - the database of proxy.
 */
 type Db struct {
 	handle *sql.DB
 }
 
 /*
-Init - инициализация базы данных. Проверяет существование базы данных и при ее
-отсутствии создает ее и заполняет нужными данными. Если база существует и корректна
-открывает подключение к ней.
+Init - initializing of the database. Validating of the existence of the database.
+If the database is not exist we are creating a database and filling it of default values.
+If the database is exist and correct we are opening connect to it.
 
-@return bool если инициализация успешна.
+@return bool if initializing successfull.
 */
 func (d *Db) Init() bool {
 	LogInfo("proxy : check database file on path %s", "", dbPath)
@@ -127,9 +127,9 @@ func (d *Db) Init() bool {
 }
 
 /*
-Create - создает файл базы и наполняет его нужными данными.
+Create - the creating the database and filling it of default values.
 
-@return error если произошла ошибка
+@return error
 */
 func (d *Db) Create() error {
 	LogInfo("proxy : creating database on path %s", "", dbPath)
@@ -166,7 +166,7 @@ func (d *Db) Create() error {
 }
 
 /*
-Close - закрытие базы данных.
+Close - the closing of the database.
 */
 func (d *Db) Close() {
 	LogInfo("proxy : closing database file on path %s", "", dbPath)
@@ -174,11 +174,11 @@ func (d *Db) Close() {
 }
 
 /*
-AddUser - добавление пользователя в базу данных.
+AddUser - the addding of the user to the database.
 
-@param *User user указатель на добавляемого пользователя.
+@param *User user pointer to User struct.
 
-@return error Если произошла ошибка
+@return error
 */
 func (d *Db) AddUser(user *User) error {
 	name := user.GetName()
@@ -208,12 +208,12 @@ func (d *Db) AddUser(user *User) error {
 }
 
 /*
-GetUser - получение пользователя из списка по имени.
+GetUser - the getting of the user from the database.
 
-@param string name имя пользователя.
+@param string name user name.
 
-@return *User указатель на найденного пользователя.
-        error  ошибка.
+@return *User the pointer to the founded user.
+        error
 */
 func (d *Db) GetUser(name string) (*User, error) {
 	var host string
@@ -238,13 +238,13 @@ func (d *Db) GetUser(name string) (*User, error) {
 }
 
 /*
-GetUserByPool - получение пользователя из списка по пулу и пользователю пула.
+GetUserByPool - the getting of the user by the pool and the user name of the pool.
 
-@param string pool пул пользователя в формате addr:port.
-@param string user имя пользователя пула.
+@param string pool the user pool in format addr:port.
+@param string user the name of the user.
 
-@return *User указатель на найденного пользователя.
-        error  ошибка.
+@return *User the pointer to the founded user.
+        error
 */
 func (d *Db) GetUserByPool(pool string, user string) (*User, error) {
 	id, err := d.GetPool(pool)
@@ -273,12 +273,12 @@ func (d *Db) GetUserByPool(pool string, user string) (*User, error) {
 }
 
 /*
-GetPool - получение идентификатора пула по его данным.
+GetPool - the getting of the pool by his data.
 
-@param string pool пул пользователя в формате addr:port.
+@param string pool the pool of the user in format addr:port.
 
-@return uint64  идентификатор пула.
-        error  ошибка.
+@return uint64 the identifier of the pool.
+        error
 */
 func (d *Db) GetPool(pool string) (uint64, error) {
 	var id uint64

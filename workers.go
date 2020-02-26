@@ -6,7 +6,7 @@ import (
 )
 
 /*
-Workers - массив подключенных воркеров.
+Workers - array of connected workers.
 */
 type Workers struct {
 	mutex   sync.RWMutex
@@ -42,7 +42,7 @@ func (w *Workers) remove(id string) {
 }
 
 /*
-Init - инициализация массива воркеров.
+Init - init of array.
 */
 func (w *Workers) Init() {
 	w.mutex.Lock()
@@ -51,11 +51,11 @@ func (w *Workers) Init() {
 }
 
 /*
-Add - добавление воркера в массив.
+Add - adding worker to array.
 
-@param *Worker worker указатель на добавляемый воркер.
+@param *Worker worker pointer to worker.
 
-@return error Если произошла ошибка
+@return error
 */
 func (w *Workers) Add(worker *Worker) error {
 	wid := worker.GetID()
@@ -76,12 +76,12 @@ func (w *Workers) Add(worker *Worker) error {
 }
 
 /*
-Get - получение воркера из списка по идентификатору.
+Get - getting worker by his id.
 
-@param string id идентификатор воркера.
+@param string id - id of worker.
 
-@return *Worker указатель на найденный воркер.
-        error  ошибка.
+@return *Worker pointer to founded worker.
+        error
 */
 func (w *Workers) Get(id string) (*Worker, error) {
 	if !ValidateHexString(id) {
@@ -100,11 +100,11 @@ func (w *Workers) Get(id string) (*Worker, error) {
 }
 
 /*
-Remove - удаление воркера из списка.
+Remove - remove worker from array.
 
-@param string id адрес воркера.
+@param string id -id of worker.
 
-@return error Если произошла ошибка удаления.
+@return error
 */
 func (w *Workers) Remove(id string) error {
 	if !ValidateHexString(id) {

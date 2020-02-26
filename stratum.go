@@ -1,5 +1,5 @@
 /*
-Методы для работы со stratum протоколом.
+Methods of stratum protocol.
 */
 package main
 
@@ -12,7 +12,7 @@ import (
 )
 
 /*
-MiningSubscribeRequest - запрос подписки.
+MiningSubscribeRequest - subscribe request.
 */
 type MiningSubscribeRequest struct {
 	ua          string
@@ -20,7 +20,7 @@ type MiningSubscribeRequest struct {
 }
 
 /*
-Encode - кодирование запроса на подписку.
+Encode - encoding of subscribe request.
 */
 func (s *MiningSubscribeRequest) Encode() ([]interface{}, error) {
 	if s.extranonce1 != "" {
@@ -33,7 +33,7 @@ func (s *MiningSubscribeRequest) Encode() ([]interface{}, error) {
 }
 
 /*
-Decode - декодирование запроса на подписку.
+Decode - decoding of subscribe request.
 ["cpuminer/2.3.2"]
 */
 func (s *MiningSubscribeRequest) Decode(data []interface{}) error {
@@ -64,7 +64,7 @@ func (s *MiningSubscribeRequest) Decode(data []interface{}) error {
 }
 
 /*
-MiningSubscribeResponse - ответ на запрос подписки.
+MiningSubscribeResponse - subscribe response.
 */
 type MiningSubscribeResponse struct {
 	subscriptions   map[string]string
@@ -73,7 +73,7 @@ type MiningSubscribeResponse struct {
 }
 
 /*
-Encode - кодирование ответа на запрос подписки.
+Encode - encoding of subscribe response.
 */
 func (s *MiningSubscribeResponse) Encode() ([]interface{}, error) {
 	if s.extranonce1 != "" && !ValidateHexString(s.extranonce1) {
@@ -99,7 +99,7 @@ func (s *MiningSubscribeResponse) Encode() ([]interface{}, error) {
 }
 
 /*
-Decode - декодирование ответа на запрос подписки.
+Decode - decoding of subscribe response.
 [[["mining.set_difficulty","deadbeefcafebabee20a000000000000"],["mining.notify","deadbeefcafebabee20a000000000000"]],"3ffffdfe",4]
 [[["mining.notify","5c567cf8"]],"bf5c565c",4]
 [["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"], "a006868b", 4]
@@ -117,11 +117,11 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 	if count == 0 {
 		return errors.New("No subscriptions in mining.subscribe response")
 	}
-	// Коррекция нарушения стандарта subscribe, использование вместо массива подписок
-	// массива частей подписок. То есть если в массиве подписок 1 элемент, этот
-	// элемент выносится за пределы массива. Сравните:
-	// [["mining.notify","5c567cf8"]] - 1 элемент массива подписок по стандарту.
-	// ["mining.notify", "ae6812eb"] - 1 элемент массива подписок с нарушением стандарта.
+	// Correction of violation of subscribing message standard, using an array of subscription
+	// parts instead of an array of subscriptions. If subscriptions array has a one element,
+	// this element placing out of subscription array. Compare:
+	// [["mining.notify","5c567cf8"]] - 1 element of the subscription array with standard.
+	// ["mining.notify", "ae6812eb"] - 1 element of the subscription array without standard.
 	_, ok = subscriptions[0].(string)
 	if ok {
 		LogInfo("proxy : stratum standart violation in mining.subscribe response. Incorrect subscription array. Correcting...", "")
@@ -182,7 +182,7 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 }
 
 /*
-MiningConfigureRequest - запрос конфигурации майнером.
+MiningConfigureRequest - configure request.
 
 {"method": "mining.configure",
   "id": 1,
@@ -195,7 +195,7 @@ type MiningConfigureRequest struct {
 }
 
 /*
-Encode - кодирование запроса конфигурации.
+Encode - encoding of configure request.
 */
 func (s *MiningConfigureRequest) Encode() ([]interface{}, error) {
 	if s.extensions == nil {
@@ -221,7 +221,7 @@ func (s *MiningConfigureRequest) Encode() ([]interface{}, error) {
 }
 
 /*
-Decode - декодирование запроса конфигурации.
+Decode - decoding of configure request.
 */
 func (s *MiningConfigureRequest) Decode(data []interface{}) error {
 	if len(data) != 2 {
@@ -264,7 +264,7 @@ func (s *MiningConfigureRequest) Decode(data []interface{}) error {
 }
 
 /*
-MiningConfigureResponse - ответ на запрос конфигурации.
+MiningConfigureResponse - configure response.
 
 {"error": null,
   "id": 1,
@@ -277,7 +277,7 @@ type MiningConfigureResponse struct {
 }
 
 /*
-Encode - кодирование ответа на запрос конфигурации.
+Encode - encoding of configure response.
 */
 func (s *MiningConfigureResponse) Encode() (map[string]interface{}, error) {
 	if s.extensions == nil {
@@ -292,7 +292,7 @@ func (s *MiningConfigureResponse) Encode() (map[string]interface{}, error) {
 }
 
 /*
-Decode - декодирование ответа на запрос конфигурации.
+Decode - decoding of configure response.
 */
 func (s *MiningConfigureResponse) Decode(data interface{}) error {
 	result, ok := data.(map[string]interface{})
@@ -322,7 +322,7 @@ func (s *MiningConfigureResponse) Decode(data interface{}) error {
 }
 
 /*
-MiningAuthorizeRequest - запрос авторизации.
+MiningAuthorizeRequest - authorize request.
 */
 type MiningAuthorizeRequest struct {
 	user     string
@@ -330,7 +330,7 @@ type MiningAuthorizeRequest struct {
 }
 
 /*
-Encode - кодирование запроса на авторизацию.
+Encode - encoding of authorize request.
 */
 func (s *MiningAuthorizeRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
@@ -340,7 +340,7 @@ func (s *MiningAuthorizeRequest) Encode() ([]interface{}, error) {
 }
 
 /*
-Decode - декодирование запроса на авторизацию.
+Decode - decoding of authorize request.
 ["1.1CvpvjwJTV5ob6HCUtsA5QZUwTbSQCj6iG", "X"]
 */
 func (s *MiningAuthorizeRequest) Decode(data []interface{}) error {
@@ -366,7 +366,7 @@ func (s *MiningAuthorizeRequest) Decode(data []interface{}) error {
 }
 
 /*
-MiningSubmitRequest - отправка шары.
+MiningSubmitRequest - share submit request.
 */
 type MiningSubmitRequest struct {
 	user        string
@@ -378,7 +378,7 @@ type MiningSubmitRequest struct {
 }
 
 /*
-Encode - кодирование шары.
+Encode - encoding of share.
 */
 func (s *MiningSubmitRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
@@ -413,7 +413,7 @@ func (s *MiningSubmitRequest) Encode() ([]interface{}, error) {
 }
 
 /*
-Decode - декодирование шары.
+Decode - decoding of share.
 */
 func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	count := len(data)
@@ -479,12 +479,12 @@ func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 }
 
 /*
-validateDword - валидация строчного представления dword.
+validateDword - validating of dword string representation.
 
-@param string dword валидируемое значение
-@param string name  название значения для сообщения об ошибке
+@param string dword validated string
+@param string name  name of validated value for error message
 
-@return error при ошибке валидации
+@return error
 */
 func (*MiningSubmitRequest) validateDword(dword string, name string) error {
 	if dword == "" {

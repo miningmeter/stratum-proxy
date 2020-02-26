@@ -1,19 +1,19 @@
 # Stratum proxy
-* Поддержка разных алгоритмов майнинга через один порт.
-* Поддержка майнинга несколькими майнерами на 1 аккаунт.
-* Счетчики шар для каждого майнера, пользователя, пула и алгоритма.
-* Хэшрейт каждого майнера.
-* Автоматическое определение алгоритма майнинга для правильного расчета хэшрейта.
-* Регистрация на прокси через API.
-* Метрики в стандартном формате Prometheus.
+* Support for different mining algorithms through one port.
+* Support for mining by several workers for 1 account.
+* Counters of shares for each worker, user, pool and algorithm.
+* Hash rate of each worker.
+* Automatic detection of the mining algorithm for the correct calculation of the hashrate.
+* Registration in a proxy through the API.
+* Metrics in standard Prometheus format.
 
-# Поддерживаемые пулы.
-Автоматическое определение алгоритма майнинга происходит на основе пары <pool_host>:<pool_port>, поэтому прокси поддерживает подключение только к определенному набору пулов, сохраненному в базе данных. API для расширения списка алгоритмов и пулов пока отсутствует.
+# Supported pools
+The mining algorithm is automatically determined based on the pair <pool_host>:<pool_port>, so the proxy only supports connecting to a specific set of pools stored in the database. An API to expand the list of algorithms and pools is not yet available.
 
-# REST API управления.
-REST API доступно по адресу `http://<web.addr>/api/v1` прокси и сейчас в API есть только 1 команда для регистрации учетных данных для подключения к пулу.
+# Management REST API
+The REST API is available at the proxy address `http://<web.addr>/api/v1` and now the API has only 1 command for registering credentials for connecting to the pool.
+
 ### POST /users
-Передаваемые данные:
 ```json
 {
     "pool": "<host>:<port>",
@@ -21,25 +21,26 @@ REST API доступно по адресу `http://<web.addr>/api/v1` прок�
     "password": "<password>"
 }
 ```
-Ответ придет в виде:
+Correct answer:
 ```json
 {
     "name": "<name>",
     "error": ""
 }
 ```
-Полученный `name` используется для того, чтобы прокси опознал подключение и подключился к правильному пулу с правильным аккаунтом. Строка подключения к прокси будет выглядеть так:
+The parameter `name` is used for identifing the connection and connects to the right pool with the right account. The proxy connection string will look like this:
 ```
--o stratum+tcp://<proxy_host>:<proxy_stratum_port> -u <name> -p <любой, игнорируется>
+-o stratum+tcp://<proxy_host>:<proxy_stratum_port> -u <name> -p <any, ignored>
 ```
-Учетные записи не удаляются (в дальнейшем планируется сделать автоматическое удаление после периода бездействия).
+Accounts are not deleted (in the future it is planned to do an automatic deletion after a period of inactivity).
 
-# Доступные метрики.
-Метрики доступны по адресу `http://<web.addr>/metrics` и включают в себя набор стандартных метрик `Prometheus` и кастомные метрики для мониторинга работы воркеров.
-## Список кастомных метрик.
-* `proxy_worker_up{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>"}` - статус воркера. Появляется при подключении воркера к прокси.
-* `proxy_pool_up{"proxy"="<proxy_host>:<proxy_port>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - статус пула. Появляется при подключении прокси к пулу.
-* `proxy_worker_sended{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - счетчик шар, отправленных майнером.
-* `proxy_worker_accepted{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - счетчик шар, принятых пулом.
-* `proxy_worker_speed{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - скорость воркера в хэшах в секунду. Окно измерения хэшрейта - 5 минут, интервал измерения  - 1 минута.
-* `proxy_worker_difficulty{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - сложность, установленная пулом для воркера.
+# Available metrics
+Metrics are available at `http://<web.addr>/metrics` and include a set of standard `Prometheus` metrics and custom metrics for monitoring the work of workers.
+
+## List of custom metrics
+* `proxy_worker_up{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>"}` - the status of the worker. Appears when the worker is connected to the proxy.
+* `proxy_pool_up{"proxy"="<proxy_host>:<proxy_port>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - the status of the pool. Appears when a proxy is connected to a pool.
+* `proxy_worker_sended{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - counter of the shares sent by the miner.
+* `proxy_worker_accepted{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - counter of the shares received by the pool.
+* `proxy_worker_speed{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - worker speed in hashes per second. Hashrate measurement window - 5 minutes, measurement interval - 1 minute.
+* `proxy_worker_difficulty{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - the difficulty set by the pool for the worker.

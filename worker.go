@@ -1,5 +1,5 @@
 /*
-Класс воркера.
+Worker.
 */
 package main
 
@@ -20,37 +20,37 @@ import (
 )
 
 /*
-Worker - воркер.
+Worker - it is worker. It's all.
 */
 type Worker struct {
 	mutex      sync.RWMutex
-	ua         string                 // User Agent воркера.
-	id         string                 // Идентификатор воркера.
-	addr       string                 // ip:port воркера.
-	user       string                 // Пользователь воркера.
-	hash       string                 // Хэш воркера.
-	divider    float64                // Делитель хэша для вычисления хэшрейта.
-	difficulty float64                // Значение сложности.
-	window     map[int64]float64      // Счетчик шар за пять минут.
-	client     *rpc2.Client           // Указатель на соединение, которое обслуживает воркер.
-	extensions map[string]interface{} // Поддерживаемые расширения.
+	ua         string                 // User Agent.
+	id         string                 // ID.
+	addr       string                 // ip:port.
+	user       string                 // User.
+	hash       string                 // Name of hash.
+	divider    float64                // Divider of hash for computing of hashrate.
+	difficulty float64                // Difficulty of job.
+	window     map[int64]float64      // Shares counter window.
+	client     *rpc2.Client           // Pointer on connection to worker.
+	extensions map[string]interface{} // Extensions of the worker.
 	pool       struct {
-		addr            string                 // IP:port пула.
-		user            string                 // Имя пользователя пула.
-		password        string                 // Пароль пула.
-		subscription    string                 // Notify-id соединения.
-		ua              string                 // User Agent передаваемый пулу.
-		extranonce1     string                 // Extranonce1 соединения.
-		extranonce2size int                    // Размер Extranonce2.
-		client          *rpc2.Client           // Соединение, обслуживающее пул.
-		extensions      map[string]interface{} // Поддерживаемые расширения
+		addr            string                 // ip:port.
+		user            string                 // User.
+		password        string                 // Password.
+		subscription    string                 // Notify-id of connection to pool.
+		ua              string                 // User Agent, that sended to pool.
+		extranonce1     string                 // Extranonce1of connection to pool.
+		extranonce2size int                    // Size of Extranonce2.
+		client          *rpc2.Client           // Pointer on connection to pool.
+		extensions      map[string]interface{} // Extensions of the pool.
 	}
 }
 
 /*
-GetAddr -  получение адреса воркера.
+GetAddr - getting addr of the worker.
 
-@return string адрес воркера
+@return string addr
 */
 func (w *Worker) GetAddr() string {
 	w.mutex.RLock()
@@ -60,9 +60,9 @@ func (w *Worker) GetAddr() string {
 }
 
 /*
-GetID -  получение идентификатора воркера.
+GetID -  getting id of the worker.
 
-@return string идентификатор воркера
+@return string id
 */
 func (w *Worker) GetID() string {
 	w.mutex.RLock()
@@ -72,9 +72,9 @@ func (w *Worker) GetID() string {
 }
 
 /*
-Init - инициализация воркера.
+Init - init of the worker.
 
-@return error если произошла ошибка
+@return error
 */
 func (w *Worker) Init(client *rpc2.Client) error {
 	if w.GetID() != "" {
@@ -89,7 +89,7 @@ func (w *Worker) Init(client *rpc2.Client) error {
 		extensions[v] = false
 	}
 
-	// Генерируем идентификатор воркера.
+	// Generate new id.
 	h := md5.New()
 	h.Write([]byte(w.addr + string(time.Now().Unix())))
 
@@ -98,9 +98,8 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	w.id = hex.EncodeToString(id[0:8])
 	w.extensions = extensions
 	w.client = client
-	// Задаем майнеру большую сложность. Если этого не сделать, то при тормозах авторизации
-	// и подключения майнер начнет заваливать прокси шарами с низкой сложностью и после некоторого
-	// количества отбивок от прокси майнер отключается.
+	// Send high difficulty to the worker. Else on slow Auth worker send to proxy big amount
+	// of shares with low difficulty. The proxy will reject these shares and worker will disconnect.
 	w.difficulty = 2097152.0
 	w.pool.extranonce2size = 4
 	w.pool.extensions = make(map[string]interface{})
@@ -113,13 +112,12 @@ func (w *Worker) Init(client *rpc2.Client) error {
 }
 
 /*
-Auth - запрос аутентификации.
+Auth - Auth request.
 
-@param string user имя пользователя воркера.
-@param string password пароль пользователя воркера. Не
-используется.
+@param string user username of the worker.
+@param string password password of the worker. Not using.
 
-@return error Если произошла ошибка.
+@return error
 */
 func (w *Worker) Auth(user, password string) error {
 	var pClient *rpc2.Client
@@ -149,9 +147,9 @@ func (w *Worker) Auth(user, password string) error {
 }
 
 /*
-Connect - подключение воркера к пулу.
+Connect - connecting worker to the pool.
 
-@return error Если произошла ошибка.
+@return error
 */
 func (w *Worker) Connect() error {
 	var status bool
@@ -172,7 +170,7 @@ func (w *Worker) Connect() error {
 
 	pUA := "miningmeter-proxy/1.0"
 
-	// Проверка существования подключения.
+	// Check existence of the connection.
 	LogInfo("%s : check connect", sID, pAddr)
 	if pClient != nil {
 		LogInfo("%s : already connected.", sID, pAddr)
@@ -180,7 +178,7 @@ func (w *Worker) Connect() error {
 	}
 	LogInfo("%s : connecting", sID, pAddr)
 
-	// Подключаемся к пулу.
+	// Connecting to the pool.
 	conn, err := net.DialTimeout("tcp", pAddr, 5*time.Second)
 
 	if err != nil {
@@ -189,32 +187,32 @@ func (w *Worker) Connect() error {
 		return fmt.Errorf("connection error: %s", err.Error())
 	}
 
-	// Инициализируем JSON-RPC клиент.
+	// Init JSON-RPC client.
 	client := rpc2.NewClientWithCodec(stratumrpc.NewStratumCodec(conn))
 
 	client.Handle("mining.notify", mining.Notify)
 	client.Handle("mining.set_difficulty", mining.SetDifficulty)
 
-	// Привязываем воркер к соединению.
+	// Linking worker to connection.
 	state := rpc2.NewState()
 	state.Set("worker", w)
 	client.State = state
 
-	// Стартуем клиент в отдельном потоке.
+	// Run client in other goroutine.
 	go client.Run()
 
-	// Привязываем соединение к пулу воркера.
+	// Linking pool to the connection.
 	w.mutex.Lock()
 	w.pool.client = client
 	w.mutex.Unlock()
 
-	// Запускаем монитор состояния соединения.
+	// Starting monitoring of the connection.
 	go w.DisconnectNotify()
 
 	var params []interface{}
 	var reply []interface{}
 
-	// Шлем subscribe пулу.
+	// Sending subscribe command to the pool.
 	msg := MiningSubscribeRequest{pUA, pSubscription}
 	params, err = msg.Encode()
 	if err != nil {
@@ -249,7 +247,7 @@ func (w *Worker) Connect() error {
 	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr,
 		response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
 
-	// Шлем authorize пулу.
+	// Sending authorize command to the pool.
 	msgAuth := MiningAuthorizeRequest{pUser, pPassword}
 	params, err = msgAuth.Encode()
 	if err != nil {
@@ -272,7 +270,7 @@ func (w *Worker) Connect() error {
 		return err
 	}
 
-	// Активируем метрики.
+	// Activating of the metrics.
 	mWorkerUp.WithLabelValues(stratumAddr, wAddr, wUser).Set(1)
 	mPoolUp.WithLabelValues(stratumAddr, wHash, pAddr).Set(1)
 	mDifficulty.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(0)
@@ -299,9 +297,9 @@ func (w *Worker) Connect() error {
 }
 
 /*
-SyncExtensions - Синхронизация поддерживаемых расширений с воркером.
+SyncExtensions - Syncing extensions between worker and pool.
 
-@return bool синхронизированы ли расширения.
+@return bool sync status.
 */
 func (w *Worker) SyncExtensions() bool {
 	var reply interface{}
@@ -320,9 +318,10 @@ func (w *Worker) SyncExtensions() bool {
 		return true
 	}
 
-	// Грязный хак. Удаляет из запроса к пулу расширение subscribe-extranonce. Не
-	// все пулы адекватно реагируют на это расширение. Например, viabtc.com при
-	// наличии этого расширения в mining.configure просто не отвечает на сообшение.
+	// Dirty hack. It removes from pool request the subscribe-extranonce extension.
+	// Some pools incorrect processing of this extension. For example,
+	// if this extension existing in mining. configures the pool viabtc.com not
+	// responding to this request.
 	he := make(map[string]interface{})
 	for k, v := range e {
 		if k != "subscribe-extranonce" {
@@ -401,11 +400,11 @@ func (w *Worker) SyncExtensions() bool {
 }
 
 /*
-UpdateData - обновление данных worker-а.
+UpdateData - updating of worker data.
 
-@param bool force принудительное переподключение воркера.
+@param bool force forced reconnection of worker.
 
-@return bool успешное ли обновление.
+@return bool if update is successfull.
 */
 func (w *Worker) UpdateData(force bool) bool {
 	w.mutex.RLock()
@@ -431,7 +430,7 @@ func (w *Worker) UpdateData(force bool) bool {
 	} else {
 		LogInfo("%s : reconnect to proxy", sID, a)
 		workers.Add(w)
-		// w.Disconnect тут не вызываем, он будет автоматически вызван при закрытии соединения.
+		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
 
 		return false
@@ -441,11 +440,11 @@ func (w *Worker) UpdateData(force bool) bool {
 }
 
 /*
-Restore - восстановление подключения к воркеру.
+Restore - restoring connection to worker.
 
-@param string id идентификатор сессии.
+@param string id session id.
 
-@return error если произошла ошибка
+@return error
 */
 func (w *Worker) Restore(id string) error {
 	if status := ValidateHexString(id); !status {
@@ -483,7 +482,7 @@ func (w *Worker) Restore(id string) error {
 	worker.mutex.Unlock()
 	w.mutex.Unlock()
 
-	// Активируем метрики.
+	// Activating of metrics.
 	mWorkerUp.WithLabelValues(stratumAddr, wAddr, wUser).Set(1)
 	mDifficulty.WithLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
 
@@ -493,7 +492,7 @@ func (w *Worker) Restore(id string) error {
 }
 
 /*
-ResetHashrate - сброс счетчика шар.
+ResetHashrate - resetting counter of shares.
 */
 func (w *Worker) ResetHashrate() {
 	w.mutex.Lock()
@@ -502,7 +501,7 @@ func (w *Worker) ResetHashrate() {
 }
 
 /*
-IncShares - увеличение счетчика шар.
+IncShares - incrementing counter of shares.
 */
 func (w *Worker) IncShares() {
 	w.mutex.RLock()
@@ -526,12 +525,12 @@ func (w *Worker) IncShares() {
 }
 
 /*
-ComputeHashrate - получение хэшрейта майнера.
+ComputeHashrate - computing of worker hashrate.
 */
 func (w *Worker) ComputeHashrate() float64 {
 	wShares := 0.0
 
-	stamp := time.Now().Unix() - 300 // Граница пяти минут.
+	stamp := time.Now().Unix() - 300 // 5 minutes.
 	w.mutex.Lock()
 	for i, s := range w.window {
 		if i >= stamp {
@@ -548,7 +547,7 @@ func (w *Worker) ComputeHashrate() float64 {
 }
 
 /*
-UpdateHashrate - обновление хэшрейта.
+UpdateHashrate - updating of hashrate.
 */
 func (w *Worker) UpdateHashrate() {
 	var hashrate float64
@@ -592,7 +591,7 @@ func (w *Worker) UpdateHashrate() {
 }
 
 /*
-DisconnectNotify - мониторинг состояния соединения.
+DisconnectNotify - monitoring of connection status.
 */
 func (w *Worker) DisconnectNotify() {
 	w.mutex.RLock()
@@ -611,10 +610,9 @@ func (w *Worker) DisconnectNotify() {
 }
 
 /*
-Disconnect - отключение воркера от прокси.
+Disconnect - disconnecting of worker.
 */
 func (w *Worker) Disconnect() {
-	// Получаем данные о пуле.
 	w.mutex.Lock()
 	sID := w.id
 	wAddr := w.addr
@@ -634,10 +632,10 @@ func (w *Worker) Disconnect() {
 		w.mutex.Unlock()
 
 		LogInfo("%s : disconnecting", sID, pAddr)
-		// Закрываем соединение с пулом.
+		// Closing of pool connection.
 		pClient.Close()
 
-		// Удаляем метрики.
+		// The deleting of metrics.
 		ok := mPoolUp.DeleteLabelValues(stratumAddr, wHash, pAddr)
 		if !ok {
 			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
@@ -658,7 +656,7 @@ func (w *Worker) Disconnect() {
 }
 
 /*
-Death - подготовка к удалению воркера.
+Death - preparing of worker delete.
 */
 func (w *Worker) Death() {
 	<-time.After(1 * time.Minute)
@@ -676,7 +674,7 @@ func (w *Worker) Death() {
 		LogInfo("%s : deleting metrics", sID, wAddr)
 
 		if pAddr != "" {
-			// Удаление метрик.
+			// Removing of metrics.
 
 			mSended.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)
 			mAccepted.DeleteLabelValues(stratumAddr, wAddr, wUser, wHash, pAddr)

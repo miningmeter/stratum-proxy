@@ -1,5 +1,5 @@
 /*
-API - функции API.
+API - API functions.
 */
 package main
 
@@ -9,7 +9,7 @@ import (
 )
 
 /*
-Pool - данные пула для создания пользователя.
+Pool - the pool data for creating of the user.
 */
 type Pool struct {
 	Pool     string `json:"pool"`
@@ -18,7 +18,7 @@ type Pool struct {
 }
 
 /*
-API - функции API.
+API - API functions.
 */
 type API struct{}
 
