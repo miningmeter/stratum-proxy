@@ -159,6 +159,7 @@ func (w *Worker) Connect() error {
 	wAddr := w.addr
 	wUser := w.user
 	wDifficulty := w.difficulty
+	wDivider := w.divider
 	wHash := w.hash
 	wClient := w.client
 	pAddr := w.pool.addr
@@ -273,6 +274,7 @@ func (w *Worker) Connect() error {
 	// Activating of the metrics.
 	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
 	mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
+	mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
 	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
 
 	LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
@@ -636,7 +638,11 @@ func (w *Worker) Disconnect() {
 		pClient.Close()
 
 		// The deleting of metrics.
-		ok := mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
+		ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
+		if !ok {
+			LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
+		}
+		ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
 		if !ok {
 			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
 		}
@@ -677,7 +683,9 @@ func (w *Worker) Death() {
 			// Removing of metrics.
 
 			mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+			mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+			mOneAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			if !ok {
 				LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
