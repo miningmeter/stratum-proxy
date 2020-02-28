@@ -414,6 +414,8 @@ func (s *MiningSubmitRequest) Encode() ([]interface{}, error) {
 
 /*
 Decode - decoding of share.
+["814d7ad2fc212263","125","28b9040000000000","5e590495","275d26e4"]
+["81c0792ed5ccda13","B8vnoaHIg","ea72010000000000","5e590735","0cbe52ca"]
 */
 func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	count := len(data)
@@ -435,16 +437,13 @@ func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	if job == "" {
 		return errors.New("Empty job in mining.submit request")
 	}
-	if !ValidateHexString(job) {
-		return fmt.Errorf("Invalid job = %s in mining.submit request", job)
-	}
 	s.job = job
 	extranonce2, ok := data[2].(string)
 	if !ok {
 		return errors.New("Invalid extranonce2 type in mining.submit request")
 	}
-	if err := s.validateDword(extranonce2, "extranonce2"); err != nil {
-		return fmt.Errorf("%s in mining.submit request", err.Error())
+	if !ValidateHexString(extranonce2) {
+		return fmt.Errorf("Invalid extranonce2 in mining.submit request")
 	}
 	s.extranonce2 = extranonce2
 	ntime, ok := data[3].(string)
