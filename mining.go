@@ -108,6 +108,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	sID := w.id
 	wAddr := w.addr
 	wDifficulty := w.difficulty
+	pJob := w.pool.job
 	w.mutex.RUnlock()
 
 	LogInfo("%s > mining.authorize", sID, wAddr)
@@ -118,12 +119,6 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 		LogError("%s : authorize error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
-
-	// The sending of high difficulty to the worker. If this is not done, then with authorization and
-	// connection brakes, the worker will begin to flood proxy with shares with low difficulty and after
-	// a certain number of errors from the proxy, the worker will disconnect.
-	client.Notify("mining.set_difficulty", wDifficulty)
-	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	auth := new(MiningAuthorizeRequest)
 	auth.Decode(params)
@@ -138,6 +133,18 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 
 	*res = true
 	LogInfo("%s < true", sID, wAddr)
+
+	// The sending of high difficulty to the worker. If this is not done, then with authorization and
+	// connection brakes, the worker will begin to flood proxy with shares with low difficulty and after
+	// a certain number of errors from the proxy, the worker will disconnect.
+	client.Notify("mining.set_difficulty", wDifficulty)
+	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
+
+	if pJob != nil {
+		jobID := pJob[0].(string)
+		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
+		client.Notify("mining.notify", pJob)
+	}
 
 	return nil
 }
@@ -303,12 +310,14 @@ func (*Mining) Notify(client *rpc2.Client, params []interface{}, res *interface{
 	w := temp.(*Worker)
 	jobID := params[0].(string)
 
-	w.mutex.RLock()
+	w.mutex.Lock()
 	sID := w.id
 	wAddr := w.addr
 	wClient := w.client
 	pAddr := w.pool.addr
-	w.mutex.RUnlock()
+
+	w.pool.job = params
+	w.mutex.Unlock()
 
 	LogInfo("%s > mining.notify: %s", sID, pAddr, jobID)
 	if wClient != nil {

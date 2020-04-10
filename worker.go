@@ -44,6 +44,7 @@ type Worker struct {
 		extranonce2size int                    // Size of Extranonce2.
 		client          *rpc2.Client           // Pointer on connection to pool.
 		extensions      map[string]interface{} // Extensions of the pool.
+		job             []interface{}          // Last job from pool.
 	}
 }
 
@@ -101,7 +102,7 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	// Send high difficulty to the worker. Else on slow Auth worker send to proxy big amount
 	// of shares with low difficulty. The proxy will reject these shares and worker will disconnect.
 	w.difficulty = 2097152.0
-	w.pool.extranonce2size = 4
+	w.pool.extranonce2size = 8
 	w.pool.extensions = make(map[string]interface{})
 	w.mutex.Unlock()
 
@@ -120,8 +121,6 @@ Auth - Auth request.
 @return error
 */
 func (w *Worker) Auth(user, password string) error {
-	var pClient *rpc2.Client
-
 	us, err := db.GetUser(user)
 	if err != nil {
 		return err
@@ -136,7 +135,7 @@ func (w *Worker) Auth(user, password string) error {
 		w.hash = us.hash
 		w.divider = us.divider
 	}
-	pClient = w.pool.client
+	pClient := w.pool.client
 	w.mutex.Unlock()
 
 	if pClient == nil {
@@ -158,10 +157,8 @@ func (w *Worker) Connect() error {
 	sID := w.id
 	wAddr := w.addr
 	wUser := w.user
-	wDifficulty := w.difficulty
 	wDivider := w.divider
 	wHash := w.hash
-	wClient := w.client
 	pAddr := w.pool.addr
 	pClient := w.pool.client
 	pUser := w.pool.user
@@ -291,9 +288,6 @@ func (w *Worker) Connect() error {
 	}
 
 	LogInfo("%s : connected to pool %s", sID, wAddr, pAddr)
-
-	wClient.Notify("mining.set_difficulty", wDifficulty)
-	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	return nil
 }
