@@ -454,7 +454,6 @@ func (w *Worker) Restore(id string) error {
 	if worker == nil {
 		return nil
 	}
-	workers.remove(id)
 
 	w.mutex.Lock()
 	worker.mutex.Lock()
@@ -612,37 +611,10 @@ func (w *Worker) Disconnect() {
 	w.mutex.Lock()
 	sID := w.id
 	wAddr := w.addr
-	wHash := w.hash
 	wClient := w.client
-	pAddr := w.pool.addr
-	pClient := w.pool.client
 
 	w.client = nil
 	w.mutex.Unlock()
-
-	worker, _ := workers.Get(sID)
-
-	if pClient != nil && worker == nil {
-		w.mutex.Lock()
-		w.pool.client = nil
-		w.mutex.Unlock()
-
-		LogInfo("%s : disconnecting", sID, pAddr)
-		// Closing of pool connection.
-		pClient.Close()
-
-		// The deleting of metrics.
-		ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
-		}
-		ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
-		}
-
-		LogInfo("%s : disconnected from proxy", sID, pAddr)
-	}
 
 	if wClient != nil {
 		LogInfo("%s : disconnecting", sID, wAddr)
@@ -668,9 +640,34 @@ func (w *Worker) Death() {
 	wHash := w.hash
 	wClient := w.client
 	pAddr := w.pool.addr
+	pClient := w.pool.client
 	w.mutex.RUnlock()
 
 	if wClient == nil {
+		workers.remove(sID)
+
+		if pClient != nil {
+			w.mutex.Lock()
+			w.pool.client = nil
+			w.mutex.Unlock()
+
+			LogInfo("%s : disconnecting", sID, pAddr)
+			// Closing of pool connection.
+			pClient.Close()
+
+			// The deleting of metrics.
+			ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
+			if !ok {
+				LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
+			}
+			ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
+			if !ok {
+				LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
+			}
+
+			LogInfo("%s : disconnected from proxy", sID, pAddr)
+		}
+
 		LogInfo("%s : deleting metrics", sID, wAddr)
 
 		if pAddr != "" {

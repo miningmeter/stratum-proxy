@@ -49,6 +49,7 @@ Metrics are available at `http://<web.addr>/metrics` and include a set of standa
 * `proxy_worker_difficulty{"proxy"="<proxy_host>:<proxy_port>", "worker"="<worker_host>:<worker_port>", "user"="<name>", "hash"="<hash>", "pool"="<pool_host>:<pool_port>"}` - the difficulty set by the pool for the worker.
 
 ## Changelog.
+* [FIX] No disconnect pool before worker death. It's speed up reconnection on miner connection failure.
 * [FIX] Send last work to restored worker.
 * [FIX] Send last difficulty to restored worker.
 * [FIX] Caching last work from pool.
