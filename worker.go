@@ -106,6 +106,8 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	w.pool.extensions = make(map[string]interface{})
 	w.mutex.Unlock()
 
+	workers.Add(w)
+
 	w.ResetHashrate()
 	go w.UpdateHashrate()
 
@@ -126,8 +128,23 @@ func (w *Worker) Auth(user, password string) error {
 		return err
 	}
 
+	w.mutex.RLock()
+	sID := w.id
+	wAddr := w.addr
+	wUser := w.user
+	pClient := w.pool.client
+	w.mutex.RUnlock()
+
+	reauth := w.user != "" && w.user != us.name
+	if reauth {
+		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
+		if pClient != nil {
+			w.DisconnectPool()
+		}
+	}
+
 	w.mutex.Lock()
-	if w.user == "" {
+	if w.user == "" || reauth {
 		w.user = us.name
 		w.pool.addr = us.pool
 		w.pool.user = us.user
@@ -135,7 +152,7 @@ func (w *Worker) Auth(user, password string) error {
 		w.hash = us.hash
 		w.divider = us.divider
 	}
-	pClient := w.pool.client
+	pClient = w.pool.client
 	w.mutex.Unlock()
 
 	if pClient == nil {
@@ -425,7 +442,6 @@ func (w *Worker) UpdateData(force bool) bool {
 		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
 		LogInfo("%s : reconnect to proxy", sID, a)
-		workers.Add(w)
 		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
 
@@ -599,6 +615,10 @@ func (w *Worker) DisconnectNotify() {
 	<-p.DisconnectNotify()
 	LogInfo("%s : rpc connection gone", sID, a)
 
+	w.mutex.RLock()
+	p = w.pool.client
+	w.mutex.RUnlock()
+
 	if p != nil {
 		w.Disconnect()
 	}
@@ -640,39 +660,16 @@ func (w *Worker) Death() {
 	wHash := w.hash
 	wClient := w.client
 	pAddr := w.pool.addr
-	pClient := w.pool.client
 	w.mutex.RUnlock()
 
 	if wClient == nil {
 		workers.remove(sID)
-
-		if pClient != nil {
-			w.mutex.Lock()
-			w.pool.client = nil
-			w.mutex.Unlock()
-
-			LogInfo("%s : disconnecting", sID, pAddr)
-			// Closing of pool connection.
-			pClient.Close()
-
-			// The deleting of metrics.
-			ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
-			if !ok {
-				LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
-			}
-			ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
-			if !ok {
-				LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
-			}
-
-			LogInfo("%s : disconnected from proxy", sID, pAddr)
-		}
+		w.DisconnectPool()
 
 		LogInfo("%s : deleting metrics", sID, wAddr)
 
 		if pAddr != "" {
 			// Removing of metrics.
-
 			mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
@@ -687,5 +684,41 @@ func (w *Worker) Death() {
 			}
 		}
 		LogInfo("%s : removed from proxy", sID, wAddr)
+	}
+}
+
+/*
+DisconnectPool - disconnect pool.
+*/
+func (w *Worker) DisconnectPool() {
+	w.mutex.RLock()
+	sID := w.id
+	wHash := w.hash
+	pAddr := w.pool.addr
+	pClient := w.pool.client
+	w.mutex.RUnlock()
+
+	if pClient != nil {
+		w.mutex.Lock()
+		w.pool.client = nil
+		w.pool.job = nil
+		w.difficulty = 2097152.0
+		w.mutex.Unlock()
+
+		LogInfo("%s : disconnecting", sID, pAddr)
+		// Closing of pool connection.
+		pClient.Close()
+
+		// The deleting of metrics.
+		ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
+		if !ok {
+			LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
+		}
+		ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
+		if !ok {
+			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
+		}
+
+		LogInfo("%s : disconnected from proxy", sID, pAddr)
 	}
 }

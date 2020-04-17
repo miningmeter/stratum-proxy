@@ -63,3 +63,16 @@ echo -ne "{\"id\":1, \"method\":\"mining.configure\", \"params\":[]}\n" | while 
 ```bash
 echo -ne "{\"id\":1, \"method\":\"mining.configure\", \"params\": [[\"version-rolling\"], {\"version-rolling.mask\": \"1fffe000\", \"version-rolling.min-bit-count\": 2}]}\n" | while IFS= read -r line; do echo $line; sleep .5; done | nc 127.0.0.1 9332
 ```
+## Restore and update session.
+Initial connection for get session id.
+```bash
+echo -ne "{\"id\":1, \"method\":\"mining.subscribe\", \"params\":[\"cpuminer/2.5.0\"]}\n{\"id\":2, \"method\":\"mining.authorize\", \"params\":[\"5b714cdc6bf48d84\", \"X\"]}\n{\"id\":3, \"method\":\"mining.extranonce.subscribe\", \"params\":[]}\n" | while IFS= read -r line; do echo $line; sleep .5; done | nc 127.0.0.1 9332
+```
+Second connection. Don't forget replace <session_id> on id, that worker has get on previous connection.
+```bash
+echo -ne "{\"id\":1, \"method\":\"mining.subscribe\", \"params\":[\"cpuminer/2.5.0\", \"<session_id>\"]}\n{\"id\":2, \"method\":\"mining.authorize\", \"params\":[\"5b714cdc6bf48d84\", \"X\"]}\n{\"id\":3, \"method\":\"mining.extranonce.subscribe\", \"params\":[]}\n" | while IFS= read -r line; do echo $line; sleep .5; done | nc 127.0.0.1 9332
+```
+Third connection. Restore session with other user. Proxy must close connection with previous pool and connect to new.
+```bash
+echo -ne "{\"id\":1, \"method\":\"mining.subscribe\", \"params\":[\"cpuminer/2.5.0\", \"<session_id>\"]}\n{\"id\":2, \"method\":\"mining.authorize\", \"params\":[\"11160eb0decdf9a6\", \"X\"]}\n{\"id\":3, \"method\":\"mining.extranonce.subscribe\", \"params\":[]}\n" | while IFS= read -r line; do echo $line; sleep .5; done | nc 127.0.0.1 9332
+```

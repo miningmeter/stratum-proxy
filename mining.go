@@ -140,6 +140,10 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	client.Notify("mining.set_difficulty", wDifficulty)
 	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
+	w.mutex.RLock()
+	pJob = w.pool.job
+	w.mutex.RUnlock()
+
 	if pJob != nil {
 		jobID := pJob[0].(string)
 		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
