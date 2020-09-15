@@ -44,7 +44,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					user = new(User)
 					err = user.Init(p.Pool, p.User, p.Password)
 				}
-				if user != nil && err == nil {
+				if err == nil {
 					LogInfo("proxy : user successfully created with name %s", "", user.name)
 					w.WriteHeader(http.StatusCreated)
 					w.Write([]byte(`{"name": "` + user.name + `", "error": ""}`))

@@ -92,7 +92,7 @@ func (w *Worker) Init(client *rpc2.Client) error {
 
 	// Generate new id.
 	h := md5.New()
-	h.Write([]byte(w.addr + string(time.Now().Unix())))
+	h.Write([]byte(w.addr + fmt.Sprint(time.Now().Unix())))
 
 	w.mutex.Lock()
 	id := h.Sum(nil)

@@ -63,7 +63,7 @@ func (u *User) Init(pool string, user string, password string) error {
 	name := ""
 	for t := time.Now().Unix(); t > 0; t-- {
 		h := md5.New()
-		h.Write([]byte(pool + user + password + string(t)))
+		h.Write([]byte(pool + user + password + fmt.Sprint(t)))
 		id := h.Sum(nil)
 		name = hex.EncodeToString(id[0:8])
 		us, _ := db.GetUser(name)
