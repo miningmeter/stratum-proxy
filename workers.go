@@ -9,9 +9,9 @@ import (
 Workers - array of connected workers.
 */
 type Workers struct {
-	mutex   sync.RWMutex
-	workers map[string]*Worker
-	pool    string
+	mutex    sync.RWMutex
+	workers  map[string]*Worker
+	poolAddr string
 }
 
 func (w *Workers) add(worker *Worker) bool {
@@ -46,7 +46,7 @@ Init - init of array.
 func (w *Workers) Init(poolAddr string) {
 	w.mutex.Lock()
 	w.workers = make(map[string]*Worker)
-	w.pool = poolAddr
+	w.poolAddr = poolAddr
 	w.mutex.Unlock()
 }
 

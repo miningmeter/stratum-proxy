@@ -34,18 +34,20 @@ type Worker struct {
 	window     map[int64]float64      // Shares counter window.
 	client     *rpc2.Client           // Pointer on connection to worker.
 	extensions map[string]interface{} // Extensions of the worker.
-	pool       struct {
-		addr            string                 // ip:port.
-		user            string                 // User.
-		password        string                 // Password.
-		subscription    string                 // Notify-id of connection to pool.
-		ua              string                 // User Agent, that sended to pool.
-		extranonce1     string                 // Extranonce1of connection to pool.
-		extranonce2size int                    // Size of Extranonce2.
-		client          *rpc2.Client           // Pointer on connection to pool.
-		extensions      map[string]interface{} // Extensions of the pool.
-		job             []interface{}          // Last job from pool.
-	}
+	pool       WorkerPool
+}
+
+type WorkerPool struct {
+	addr            string                 // ip:port.
+	user            string                 // User.
+	password        string                 // Password.
+	subscription    string                 // Notify-id of connection to pool.
+	ua              string                 // User Agent, that sended to pool.
+	extranonce1     string                 // Extranonce1of connection to pool.
+	extranonce2size int                    // Size of Extranonce2.
+	client          *rpc2.Client           // Pointer on connection to pool.
+	extensions      map[string]interface{} // Extensions of the pool.
+	job             []interface{}          // Last job from pool.
 }
 
 /*
@@ -102,6 +104,7 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	// Send high difficulty to the worker. Else on slow Auth worker send to proxy big amount
 	// of shares with low difficulty. The proxy will reject these shares and worker will disconnect.
 	w.difficulty = 2097152.0
+	w.pool.addr = workers.poolAddr
 	w.pool.extranonce2size = 8
 	w.pool.extensions = make(map[string]interface{})
 	w.mutex.Unlock()
