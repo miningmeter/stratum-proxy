@@ -56,6 +56,7 @@ func (u *User) Init(pool string, user string, password string) error {
 	if !ValidateAddr(pool, true) {
 		return fmt.Errorf("invalid format pool = %s on init user", pool)
 	}
+
 	if user == "" {
 		return errors.New("empty user on init user")
 	}

@@ -87,6 +87,7 @@ var (
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.na.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.eu.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.jp.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
+		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('mining.dev.pool.titan.io', 4242, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 	}
 )
 
