@@ -108,7 +108,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	sID := w.id
 	wAddr := w.addr
 	wDifficulty := w.difficulty
-	pJob := w.pool.job
+
 	w.mutex.RUnlock()
 
 	LogInfo("%s > mining.authorize", sID, wAddr)
@@ -141,7 +141,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	w.mutex.RLock()
-	pJob = w.pool.job
+	pJob := w.pool.job
 	w.mutex.RUnlock()
 
 	if pJob != nil {

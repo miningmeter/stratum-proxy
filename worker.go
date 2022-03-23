@@ -279,7 +279,7 @@ func (w *Worker) Connect() error {
 		return err
 	}
 	LogInfo("%s > mining.authorize: %t", sID, pAddr, breply)
-	if breply == false {
+	if !breply {
 		LogError("%s : access denied to pool", sID, pAddr)
 		w.Disconnect()
 		return err

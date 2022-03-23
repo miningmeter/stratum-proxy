@@ -11,6 +11,7 @@ Workers - array of connected workers.
 type Workers struct {
 	mutex   sync.RWMutex
 	workers map[string]*Worker
+	pool    string
 }
 
 func (w *Workers) add(worker *Worker) bool {
@@ -37,16 +38,15 @@ func (w *Workers) remove(id string) {
 	if worker := w.get(id); worker != nil {
 		delete(w.workers, id)
 	}
-
-	return
 }
 
 /*
 Init - init of array.
 */
-func (w *Workers) Init() {
+func (w *Workers) Init(poolAddr string) {
 	w.mutex.Lock()
 	w.workers = make(map[string]*Worker)
+	w.pool = poolAddr
 	w.mutex.Unlock()
 }
 

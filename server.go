@@ -35,6 +35,8 @@ var (
 	stratumAddr = "127.0.0.1:9332"
 	// API endpoint.
 	webAddr = "127.0.0.1:8080"
+	// Pool target
+	poolAddr = ""
 	// Out to syslog.
 	syslog = false
 	// GitCommit - Git commit for build
@@ -58,6 +60,7 @@ Main function.
 func main() {
 	flag.StringVar(&stratumAddr, "stratum.addr", "127.0.0.1:9332", "Address and port for stratum")
 	flag.StringVar(&webAddr, "web.addr", "127.0.0.1:8080", "Address and port for web server and metrics")
+	flag.StringVar(&poolAddr, "pool.addr", "mining.dev.pool.titan.io:4242", "Address and port for mining pool")
 	flag.BoolVar(&syslog, "syslog", false, "On true adapt log to out in syslog, hide date and colors")
 	flag.StringVar(&dbPath, "db.path", "proxy.db", "Filepath for SQLite database")
 	flag.StringVar(&tag, "metrics.tag", stratumAddr, "Prometheus metrics proxy tag")
@@ -74,7 +77,7 @@ func main() {
 	}
 	defer db.Close()
 	// Inintializing of internal storage.
-	workers.Init()
+	workers.Init(poolAddr)
 
 	// Initializing of API and metrics.
 	LogInfo("proxy : web server serve on: %s", "", webAddr)
@@ -84,7 +87,7 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	go http.ListenAndServe(webAddr, nil)
 
-	InitWorkerServer()
+	InitWorkerServer(poolAddr)
 
 	os.Exit(0)
 }
@@ -92,7 +95,7 @@ func main() {
 /*
 InitWorkerServer - initializing of server for workers connects.
 */
-func InitWorkerServer() {
+func InitWorkerServer(poolAddr string) {
 	// Launching of JSON-RPC server.
 	server := rpc2.NewServer()
 	// Subscribing of server to needed handlers.
