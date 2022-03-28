@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -126,10 +127,14 @@ Auth - Auth request.
 @return error
 */
 func (w *Worker) Auth(user, password string) error {
-	us, err := db.GetUser(user)
-	if err != nil {
-		return err
-	}
+	// us, err := db.GetUser(user)
+	// if err != nil {
+	// 	return err
+	// }
+
+	us := &User{}
+
+	us.Init(w.pool.addr, user, password)
 
 	w.mutex.RLock()
 	sID := w.id
@@ -138,7 +143,9 @@ func (w *Worker) Auth(user, password string) error {
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
+	LogInfo("worker user before reauth: %s", sID, w.user)
 	reauth := w.user != "" && w.user != us.name
+	LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
 	if reauth {
 		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
 		if pClient != nil {
@@ -147,13 +154,14 @@ func (w *Worker) Auth(user, password string) error {
 	}
 
 	w.mutex.Lock()
+	LogInfo("worker user after reauth: %s", sID, w.user)
 	if w.user == "" || reauth {
-		w.user = us.name
+		w.user = us.GetName()
 		w.pool.addr = us.pool
 		w.pool.user = us.user
 		w.pool.password = us.password
-		w.hash = us.hash
-		w.divider = us.divider
+		w.hash = "sha256" //us.hash
+		w.divider = 1.0   //us.divider
 	}
 	pClient = w.pool.client
 	w.mutex.Unlock()
@@ -181,6 +189,7 @@ func (w *Worker) Connect() error {
 	wHash := w.hash
 	pAddr := w.pool.addr
 	pClient := w.pool.client
+	//TODO: FIGURE OUT WHY THIS IS EMPTY
 	pUser := w.pool.user
 	pPassword := w.pool.password
 	pSubscription := w.pool.subscription

@@ -342,7 +342,7 @@ Encode - encoding of authorize request.
 */
 func (s *MiningAuthorizeRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
-		return nil, fmt.Errorf("empty user in mining.authorize")
+		return nil, fmt.Errorf("empty user in mining.authorize Encode()")
 	}
 	return []interface{}{s.user, s.password}, nil
 }

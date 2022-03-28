@@ -17,6 +17,8 @@ type Workers struct {
 func (w *Workers) add(worker *Worker) bool {
 	id := worker.GetID()
 
+	LogInfo("adding worker; addr: %v; pool: %v; user: %v", id, worker.addr, worker.pool.addr, worker.user)
+
 	if wr := w.get(id); wr == nil {
 		w.workers[id] = worker
 	} else {

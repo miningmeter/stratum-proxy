@@ -5,6 +5,7 @@ Stratum-proxy with external manage.
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net"
@@ -12,11 +13,14 @@ import (
 	"regexp"
 	"time"
 
+	"net/http"
+
 	rpc2 "github.com/miningmeter/rpc2"
 	"github.com/miningmeter/rpc2/stratumrpc"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"net/http"
+	"gitlab.com/TitanInd/hashrouter/contractmanager"
+	"gitlab.com/TitanInd/hashrouter/events"
+	"gitlab.com/TitanInd/hashrouter/interfaces"
 )
 
 /*
@@ -87,9 +91,34 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	go http.ListenAndServe(webAddr, nil)
 
+	eventManager := events.NewEventManager()
+
+	InitContractManager(eventManager)
+
 	InitWorkerServer(poolAddr)
 
 	os.Exit(0)
+}
+
+type DestinationUpdateHandler struct{ interfaces.Subscriber }
+
+func (d *DestinationUpdateHandler) Update(message interface{}) {
+	destinationMessage := message.(contractmanager.Dest)
+
+	poolAddr = destinationMessage.NetUrl
+
+	workers.Init(poolAddr)
+}
+
+func InitContractManager(eventManager interfaces.IEventManager) {
+
+	ctx := context.Background()
+
+	sellerManager := &contractmanager.SellerContractManager{}
+	handler := &DestinationUpdateHandler{}
+	eventManager.Attach(contractmanager.DestMsg, handler)
+
+	contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
 }
 
 /*
