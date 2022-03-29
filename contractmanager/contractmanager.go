@@ -63,6 +63,10 @@ type SellerContractManager struct {
 	ctx                 context.Context
 }
 
+func (s *SellerContractManager) SetLogger(l *log.Logger) {
+	s.l = l
+}
+
 type MinerState string
 
 const (
@@ -213,9 +217,9 @@ func (seller *SellerContractManager) start(addr string) (err error) {
 	// start routines for existing contracts
 	// for addr := range seller.nodeOperator.Contracts {
 	//TODO: get addr from josh
-	hrLogs, hrSub, err := subscribeToContractEvents(seller.ethClient, common.HexToAddress(string(addr)))
+	hrLogs, hrSub, err := subscribeToContractEvents(seller.ethClient, common.HexToAddress(addr))
 	if err != nil {
-		seller.l.Printf("Panic", fmt.Sprintf("Failed to subscribe to events on hashrate contract %s, Fileline::%s, Error::", addr, "\r\n"), err)
+		seller.l.Fatalf("Panic: %v", fmt.Sprintf("Failed to subscribe to events on hashrate contract %s, Error::%v", addr, err))
 	}
 	go seller.watchHashrateContract(addr, hrLogs, hrSub)
 	// }
@@ -663,11 +667,12 @@ func subscribeToContractEvents(client *ethclient.Client, contractAddress common.
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{contractAddress},
 	}
-
+	fmt.Printf("client info:")
+	// fmt.Println(client.)
 	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		//fmt.Printf("Funcname::%s, Fileline::%s, Error::%v\n", lumerinlib.Funcname(), lumerinlib.FileLine(), err)
+		fmt.Printf("Funcname::%s, Error::%v\n", "subscribeToContractEvents", err)
 		return logs, sub, err
 	}
 

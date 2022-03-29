@@ -105,7 +105,11 @@ type DestinationUpdateHandler struct{ interfaces.Subscriber }
 func (d *DestinationUpdateHandler) Update(message interface{}) {
 	destinationMessage := message.(contractmanager.Dest)
 
-	poolAddr = destinationMessage.NetUrl
+	newPoolAddr := destinationMessage.NetUrl
+
+	workers.Init(newPoolAddr)
+
+	<-time.After(30 * time.Second)
 
 	workers.Init(poolAddr)
 }
@@ -115,10 +119,13 @@ func InitContractManager(eventManager interfaces.IEventManager) {
 	ctx := context.Background()
 
 	sellerManager := &contractmanager.SellerContractManager{}
+	sellerManager.SetLogger(log.Default())
+
 	handler := &DestinationUpdateHandler{}
 	eventManager.Attach(contractmanager.DestMsg, handler)
 
-	contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
+	contractmanager.Run(&ctx, sellerManager, eventManager, "0x54Ff9Bc163e0031B45dbE340b175CE7873B8796e", "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a")
+	// contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
 }
 
 /*
