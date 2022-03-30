@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/goglue/eventmanager"
@@ -8,31 +9,38 @@ import (
 )
 
 type EventManager struct {
-	eventmanager.Recorder
 	*eventmanager.EventManager
+	recorder *Recorder
+}
+
+type Recorder struct {
+	eventmanager.Recorder
 	history map[string]map[time.Time]interface{}
 }
 
 //TODO: fix nil pointer reference error
-func (e *EventManager) Snapshot(event string, payload interface{}, on time.Time) {
-	if e.history == nil {
-		e.history = make(map[string]map[time.Time]interface{})
+func (r *Recorder) SnapShot(event string, payload interface{}, on time.Time) {
+	fmt.Println("snapshot")
+	if r.history == nil {
+		r.history = make(map[string]map[time.Time]interface{})
 	}
 
-	if e.history[event] == nil {
-		e.history[event] = make(map[time.Time]interface{})
+	if r.history[event] == nil {
+		r.history[event] = make(map[time.Time]interface{})
 	}
 
-	e.history[event][on] = payload
+	r.history[event][on] = payload
 }
 
 func NewEventManager() interfaces.IEventManager {
 	memory := eventmanager.NewMemoryStorage()
 	dispatcher := eventmanager.NewDispatcher()
 
-	newEventManager := &EventManager{}
-
-	newInternalEventManager := eventmanager.NewEventManager(memory, dispatcher, newEventManager)
+	newEventManager := &EventManager{
+		recorder: &Recorder{},
+	}
+	fmt.Printf("recorder: %+v\n", newEventManager.recorder)
+	newInternalEventManager := eventmanager.NewEventManager(memory, dispatcher, newEventManager.recorder)
 
 	newEventManager.EventManager = newInternalEventManager
 
