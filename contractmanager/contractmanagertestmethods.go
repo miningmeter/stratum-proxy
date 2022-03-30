@@ -7,7 +7,6 @@ import (
 	// "errors"
 	"fmt"
 	"log"
-	"math"
 	"math/big"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 
 	"gitlab.com/TitanInd/hashrouter/lumerinlib/clonefactory"
 	// "gitlab.com/TitanInd/lumerin/lumerinlib/implementation"
-	"gitlab.com/TitanInd/lumerin/lumerinlib/lumerintoken"
+	"gitlab.com/TitanInd/hashrouter/lumerinlib/lumerintoken"
 )
 
 // type TestSetup struct {
@@ -31,7 +30,6 @@ import (
 // 	lumerinAddress         common.Address
 // 	cloneFactoryAddress    common.Address
 // }
-
 
 func CreateHashrateContract(client *ethclient.Client,
 	fromAddress common.Address,
@@ -143,7 +141,7 @@ func PurchaseHashrateContract(client *ethclient.Client,
 
 func DeployContracts(client *ethclient.Client,
 	fromAddress common.Address,
-	privateKeyString string) common.HexToAddress {
+	privateKeyString string) common.Address {
 	privateKey, err := crypto.HexToECDSA(privateKeyString)
 	if err != nil {
 		log.Fatalf("Error::%v", err)
