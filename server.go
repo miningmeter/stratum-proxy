@@ -54,18 +54,28 @@ var (
 	dbPath = "proxy.db"
 	// Metrics proxy tag.
 	tag = ""
+	// HashrateContract Address
+	hashrateContract string
+	// Eth node Address
+	ethNodeAddr string
 )
 
-/*
-Main function.
-*/
-func main() {
+func init() {
 	flag.StringVar(&stratumAddr, "stratum.addr", "127.0.0.1:9332", "Address and port for stratum")
 	flag.StringVar(&webAddr, "web.addr", "127.0.0.1:8080", "Address and port for web server and metrics")
 	flag.StringVar(&poolAddr, "pool.addr", "mining.dev.pool.titan.io:4242", "Address and port for mining pool")
 	flag.BoolVar(&syslog, "syslog", false, "On true adapt log to out in syslog, hide date and colors")
 	flag.StringVar(&dbPath, "db.path", "proxy.db", "Filepath for SQLite database")
 	flag.StringVar(&tag, "metrics.tag", stratumAddr, "Prometheus metrics proxy tag")
+	flag.StringVar(&hashrateContract, "contract.addr", "", "Address of smart contract that node is servicing")
+	flag.StringVar(&ethNodeAddr, "ethNode.addr", "", "Address of Ethereum RPC node to connect to via websocket")
+}
+
+/*
+Main function.
+*/
+func main() {
+
 	flag.Parse()
 
 	if syslog {
@@ -94,7 +104,7 @@ func main() {
 
 	eventManager := events.NewEventManager()
 
-	InitContractManager(eventManager)
+	InitContractManager(eventManager, hashrateContract, ethNodeAddr)
 
 	InitWorkerServer(poolAddr)
 
@@ -123,7 +133,7 @@ func (d *DestinationUpdateHandler) Update(message interface{}) {
 	workers.Init(poolAddr, oldUser, oldPass)
 }
 
-func InitContractManager(eventManager interfaces.IEventManager) {
+func InitContractManager(eventManager interfaces.IEventManager, hashrateContract string, ethNodeAddr string) {
 
 	ctx := context.Background()
 
@@ -133,8 +143,7 @@ func InitContractManager(eventManager interfaces.IEventManager) {
 	handler := &DestinationUpdateHandler{}
 	eventManager.Attach(contractmanager.DestMsg, handler)
 
-	contractmanager.Run(&ctx, sellerManager, eventManager, "0x3ED63115D92a95538EB111D32f07Ef80C455e12b∂", "ws://127.0.0.1:7545")
-	// contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
+	contractmanager.Run(&ctx, sellerManager, eventManager, hashrateContract, ethNodeAddr)
 }
 
 /*

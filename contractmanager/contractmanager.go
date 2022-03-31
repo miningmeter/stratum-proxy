@@ -182,7 +182,7 @@ func (seller *SellerContractManager) init(ctx *context.Context, ethNodeAddr stri
 	// seller.privateKey = privateKey
 
 	var client *ethclient.Client
-	client, err = setUpClient(ethNodeAddr, seller.account)
+	client, err = SetUpClient(ethNodeAddr, seller.account)
 	if err != nil {
 		return err
 	}
@@ -206,7 +206,7 @@ func (seller *SellerContractManager) start(addr string) (err error) {
 	// }
 
 	// routine for listensing to contract creation events that will update seller msg with new contracts and load new contract onto msgbus
-	// cfLogs, cfSub, err := subscribeToContractEvents(seller.ethClient, seller.cloneFactoryAddress)
+	// cfLogs, cfSub, err := SubscribeToContractEvents(seller.ethClient, seller.cloneFactoryAddress)
 	// if err != nil {
 	// 	return err
 	// }
@@ -217,7 +217,7 @@ func (seller *SellerContractManager) start(addr string) (err error) {
 	// start routines for existing contracts
 	// for addr := range seller.nodeOperator.Contracts {
 	//TODO: get addr from josh
-	hrLogs, hrSub, err := subscribeToContractEvents(seller.ethClient, common.HexToAddress(addr))
+	hrLogs, hrSub, err := SubscribeToContractEvents(seller.ethClient, common.HexToAddress(addr))
 	if err != nil {
 		seller.l.Fatalf("Panic: %v", fmt.Sprintf("Failed to subscribe to events on hashrate contract %v, Error::%v", addr, err))
 	}
@@ -240,7 +240,7 @@ func (seller *SellerContractManager) start(addr string) (err error) {
 	// 			newContract := event.Data.(Contract)
 	// 			if newContract.State == ContAvailableState {
 	// 				addr := common.HexToAddress(string(newContract.ID))
-	// 				hrLogs, hrSub, err := subscribeToContractEvents(seller.ethClient, addr)
+	// 				hrLogs, hrSub, err := SubscribeToContractEvents(seller.ethClient, addr)
 	// 				if err != nil {
 	// 					seller.l.Printf("panic", fmt.Sprintf("Failed to subscribe to events on hashrate contract %v, Fileline::%v, Error::", newContract.ID, lumerinlib.FileLine()), err)
 	// 				}
@@ -639,7 +639,7 @@ func (seller *SellerContractManager) watchHashrateContract(addr string, hrLogs c
 // 	return account, privateKey
 // }
 
-func setUpClient(clientAddress string, contractManagerAccount common.Address) (client *ethclient.Client, err error) {
+func SetUpClient(clientAddress string, contractManagerAccount common.Address) (client *ethclient.Client, err error) {
 	client, err = ethclient.Dial(clientAddress)
 	if err != nil {
 		//fmt.Printf("Funcname::%v, Fileline::%v, Error::%v\n", lumerinlib.Funcname(), lumerinlib.FileLine(), err)
@@ -663,16 +663,15 @@ func setUpClient(clientAddress string, contractManagerAccount common.Address) (c
 	return client, err
 }
 
-func subscribeToContractEvents(client *ethclient.Client, contractAddress common.Address) (chan types.Log, ethereum.Subscription, error) {
+func SubscribeToContractEvents(client *ethclient.Client, contractAddress common.Address) (chan types.Log, ethereum.Subscription, error) {
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{contractAddress},
 	}
-	fmt.Printf("client info:")
-	// fmt.Println(client.)
+
 	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		fmt.Printf("Funcname::%v, Error::%v\n", "subscribeToContractEvents", err)
+		fmt.Printf("Funcname::%v, Error::%v\n", "SubscribeToContractEvents", err)
 		return logs, sub, err
 	}
 
