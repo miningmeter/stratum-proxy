@@ -21,7 +21,7 @@ func TestHashrateContractCreation(t *testing.T) {
 	speed := 100
 	length := 100
 
-	client, err := setUpClient(gethNodeAddress, accountAddress)
+	client, err := SetUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
 		log.Fatalf("Error::%v", err)
 	}
@@ -29,7 +29,7 @@ func TestHashrateContractCreation(t *testing.T) {
 	CreateHashrateContract(client, accountAddress, accountPrivateKey, clonefactoryAddress, price, limit, speed, length, clonefactoryAddress)
 
 	// subcribe to creation events emitted by clonefactory contract
-	cfLogs, cfSub, _ := subscribeToContractEvents(client, clonefactoryAddress)
+	cfLogs, cfSub, _ := SubscribeToContractEvents(client, clonefactoryAddress)
 	// create event signature to parse out creation event
 	contractCreatedSig := []byte("contractCreated(address,string)")
 	contractCreatedSigHash := crypto.Keccak256Hash(contractCreatedSig)
@@ -56,7 +56,7 @@ func TestHashrateContractPurchase(t *testing.T) {
 	hashrateContractAddress := common.HexToAddress("")
 	poolUrl := ""
 
-	client, err := setUpClient(gethNodeAddress, accountAddress)
+	client, err := SetUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
 		log.Fatalf("Error::%v", err)
 	}
@@ -64,7 +64,7 @@ func TestHashrateContractPurchase(t *testing.T) {
 	PurchaseHashrateContract(client, accountAddress, accountPrivateKey, clonefactoryAddress, hashrateContractAddress, accountAddress, poolUrl)
 
 	// subcribe to purchase events emitted by clonefactory contract
-	cfLogs, cfSub, _ := subscribeToContractEvents(client, clonefactoryAddress)
+	cfLogs, cfSub, _ := SubscribeToContractEvents(client, clonefactoryAddress)
 	// create event signature to parse out purchase event
 	clonefactoryContractPurchasedSig := []byte("clonefactoryContractPurchased(address)")
 	clonefactoryContractPurchasedSigHash := crypto.Keccak256Hash(clonefactoryContractPurchasedSig)
@@ -87,7 +87,7 @@ func TestDeployContracts(t *testing.T) {
 	accountPrivateKey := ""
 	gethNodeAddress := ""
 
-	client, err := setUpClient(gethNodeAddress, accountAddress)
+	client, err := SetUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
 		log.Fatalf("Error::%v", err)
 	}

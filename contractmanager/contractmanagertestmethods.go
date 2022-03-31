@@ -152,7 +152,6 @@ func DeployContracts(client *ethclient.Client,
 	if err != nil {
 		log.Fatalf("Error::%v", err)
 	}
-	fmt.Println("Nonce: ", nonce)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
@@ -183,13 +182,26 @@ func DeployContracts(client *ethclient.Client,
 	_, lerr := client.TransactionReceipt(context.Background(), ltransaction.Hash())
 	for lerr != nil {
 		_, lerr = client.TransactionReceipt(context.Background(), ltransaction.Hash())
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 1)
 	}
 
-	fmt.Println("Deploying Clone Factory contract")
-	cfaddress, _, _, err := clonefactory.DeployClonefactory(auth, client, laddress, common.HexToAddress(""))
+	nonce, err = client.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
 		log.Fatalf("Error::%v", err)
+	}
+	auth.Nonce = big.NewInt(int64(nonce))
+
+	fmt.Println("Deploying Clone Factory contract")
+	cfaddress, ctransaction, _, err := clonefactory.DeployClonefactory(auth, client, laddress, common.HexToAddress(""))
+	if err != nil {
+		log.Fatalf("Error::%v", err)
+	}
+
+	// wait until clonefactory was deployed
+	_, cferr := client.TransactionReceipt(context.Background(), ctransaction.Hash())
+	for cferr != nil {
+		_, cferr = client.TransactionReceipt(context.Background(), ctransaction.Hash())
+		time.Sleep(time.Second * 1)
 	}
 
 	return cfaddress
