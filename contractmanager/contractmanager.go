@@ -456,7 +456,7 @@ func (seller *SellerContractManager) watchHashrateContract(addr string, hrLogs c
 						NetUrl: destUrl,
 					}
 
-					seller.ps.Dispatch(DestMsg, destMsg)
+					seller.ps.GoDispatch(DestMsg, destMsg)
 
 					// event, err := seller.ps.GetWait(ContractMsg, string(addr))
 					if err != nil {

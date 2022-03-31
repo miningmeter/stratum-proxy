@@ -67,10 +67,10 @@ func (u *User) Init(pool string, user string, password string) error {
 		h.Write([]byte(pool + user + password + fmt.Sprint(t)))
 		id := h.Sum(nil)
 		name = hex.EncodeToString(id[0:8])
-		us, _ := db.GetUser(name)
-		if us == nil {
-			break
-		}
+		// us, _ := db.GetUser(name)
+		// if us == nil {
+		break
+		// }
 	}
 
 	u.mutex.Lock()
@@ -81,11 +81,11 @@ func (u *User) Init(pool string, user string, password string) error {
 	u.touch = 0
 	u.mutex.Unlock()
 
-	if err := db.AddUser(u); err != nil {
-		return err
-	}
+	// if err := db.AddUser(u); err != nil {
+	// 	return err
+	// }
 
-	LogInfo("proxy : created new user %s for account %s on pool %s", "", name, user, pool)
+	//LogInfo("proxy : created new user %s for account %s on pool %s", "", name, user, pool)
 
 	return nil
 }

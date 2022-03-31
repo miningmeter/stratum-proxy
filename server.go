@@ -13,11 +13,9 @@ import (
 	"regexp"
 	"time"
 
-	"net/http"
-
+	"github.com/joho/godotenv"
 	rpc2 "github.com/miningmeter/rpc2"
 	"github.com/miningmeter/rpc2/stratumrpc"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gitlab.com/TitanInd/hashrouter/contractmanager"
 	"gitlab.com/TitanInd/hashrouter/events"
 	"gitlab.com/TitanInd/hashrouter/interfaces"
@@ -73,23 +71,26 @@ func main() {
 	if syslog {
 		log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 	}
-	LogInfo("proxy : version: %s-%s", "", VERSION, GitCommit)
+
+	godotenv.Load(".env")
+
+	//LogInfo("proxy : version: %s-%s", "", VERSION, GitCommit)
 
 	// Initializing of database.
-	if !db.Init() {
-		os.Exit(1)
-	}
-	defer db.Close()
+	// if !db.Init() {
+	// 	os.Exit(1)
+	// }
+	// defer db.Close()
 	// Inintializing of internal storage.
-	workers.Init(poolAddr)
+	workers.Init(poolAddr, os.Getenv("DEFAULT_POOL_USER"), os.Getenv("DEFAULT_POOL_PASSWORD"))
 
 	// Initializing of API and metrics.
-	LogInfo("proxy : web server serve on: %s", "", webAddr)
-	// Users.
-	http.Handle("/api/v1/users", &API{})
-	// Metrics.
-	http.Handle("/metrics", promhttp.Handler())
-	go http.ListenAndServe(webAddr, nil)
+	// //LogInfo("proxy : web server serve on: %s", "", webAddr)
+	// // Users.
+	// http.Handle("/api/v1/users", &API{})
+	// // Metrics.
+	// http.Handle("/metrics", promhttp.Handler())
+	// go http.ListenAndServe(webAddr, nil)
 
 	eventManager := events.NewEventManager()
 
@@ -107,11 +108,19 @@ func (d *DestinationUpdateHandler) Update(message interface{}) {
 
 	newPoolAddr := destinationMessage.NetUrl
 
-	workers.Init(newPoolAddr)
+	oldUser := workers.user
+	oldPass := workers.password
 
-	<-time.After(30 * time.Second)
+	//LogInfo("Switching to new pool address: %v", "", newPoolAddr)
 
-	workers.Init(poolAddr)
+	workers.Reset()
+
+	workers.Init(newPoolAddr, os.Getenv("TEST_POOL_USER"), os.Getenv("TEST_POOL_PASSWORD"))
+
+	<-time.After(180 * time.Second)
+
+	log.Printf("Switching back to old pool address: %v", poolAddr)
+	workers.Init(poolAddr, oldUser, oldPass)
 }
 
 func InitContractManager(eventManager interfaces.IEventManager) {
@@ -124,7 +133,7 @@ func InitContractManager(eventManager interfaces.IEventManager) {
 	handler := &DestinationUpdateHandler{}
 	eventManager.Attach(contractmanager.DestMsg, handler)
 
-	contractmanager.Run(&ctx, sellerManager, eventManager, "0x54Ff9Bc163e0031B45dbE340b175CE7873B8796e", "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a")
+	contractmanager.Run(&ctx, sellerManager, eventManager, "0x3ED63115D92a95538EB111D32f07Ef80C455e12b", "ws://127.0.0.1:7545")
 	// contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
 }
 
@@ -143,7 +152,7 @@ func InitWorkerServer(poolAddr string) {
 
 	server.OnDisconnect(Disconnect)
 
-	LogInfo("proxy : listen on: %s", "", stratumAddr)
+	//LogInfo("proxy : listen on: %s", "", stratumAddr)
 
 	// Waiting of connections.
 	link, _ := net.Listen("tcp", stratumAddr)
@@ -166,7 +175,7 @@ WaitWorker - waiting of worker init.
 */
 func WaitWorker(conn net.Conn, server *rpc2.Server) {
 	addr := conn.RemoteAddr().String()
-	LogInfo("%s : try connect to proxy", "", addr)
+	//LogInfo("%s : try connect to proxy", "", addr)
 	// Initializing of worker.
 	w := &Worker{addr: addr}
 	// Linking of JSON-RPC connection to worker.
@@ -178,7 +187,7 @@ func WaitWorker(conn net.Conn, server *rpc2.Server) {
 	<-time.After(3 * time.Second)
 	// If worker not initialized, we kill connection.
 	if w.GetID() == "" {
-		LogInfo("%s : disconnect by silence", "", addr)
+		//LogInfo("%s : disconnect by silence", "", addr)
 		conn.Close()
 	}
 }
@@ -192,8 +201,8 @@ Connect - processing of connecting worker to proxy.
 func Connect(client *rpc2.Client, w *Worker) {
 	wAddr := w.GetAddr()
 	if err := w.Init(client); err == nil {
-		sID := w.GetID()
-		LogInfo("%s : connect to proxy", sID, wAddr)
+		// sID := w.GetID()
+		//LogInfo("%s : connect to proxy", sID, wAddr)
 	} else {
 		LogError("%s : error connect to proxy: %s", "", wAddr, err.Error())
 		client.Close()

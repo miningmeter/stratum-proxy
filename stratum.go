@@ -124,7 +124,7 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 	// ["mining.notify", "ae6812eb"] - 1 element of the subscription array without standard.
 	_, ok = subscriptions[0].(string)
 	if ok {
-		LogInfo("proxy : stratum standart violation in mining.subscribe response. Incorrect subscription array. Correcting...", "")
+		//LogInfo("proxy : stratum standart violation in mining.subscribe response. Incorrect subscription array. Correcting...", "")
 		subscriptions = []interface{}{subscriptions}
 	}
 	s.subscriptions = make(map[string]string)

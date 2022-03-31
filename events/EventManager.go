@@ -39,7 +39,7 @@ func NewEventManager() interfaces.IEventManager {
 	newEventManager := &EventManager{
 		recorder: &Recorder{},
 	}
-	fmt.Printf("recorder: %+v\n", newEventManager.recorder)
+
 	newInternalEventManager := eventmanager.NewEventManager(memory, dispatcher, newEventManager.recorder)
 
 	newEventManager.EventManager = newInternalEventManager

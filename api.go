@@ -35,24 +35,24 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		decoder := json.NewDecoder(r.Body)
 		err = decoder.Decode(&p)
 		if err == nil {
-			LogInfo("proxy : API request to add user with pool %s and credentials %s:%s", "", p.Pool, p.User, p.Password)
+			//LogInfo("proxy : API request to add user with pool %s and credentials %s:%s", "", p.Pool, p.User, p.Password)
 			var user *User
 			user, err = db.GetUserByPool(p.Pool, p.User)
 			if err == nil {
 				if user == nil {
-					LogInfo("proxy : user not found and will be added", "")
+					//LogInfo("proxy : user not found and will be added", "")
 					user = new(User)
 					err = user.Init(p.Pool, p.User, p.Password)
 				}
 				if err == nil {
-					LogInfo("proxy : user successfully created with name %s", "", user.name)
+					//LogInfo("proxy : user successfully created with name %s", "", user.name)
 					w.WriteHeader(http.StatusCreated)
 					w.Write([]byte(`{"name": "` + user.name + `", "error": ""}`))
 				}
 			}
 		}
 	} else if u.Path == "/api/v1/pools" && r.Method == "GET" {
-		LogInfo("proxy : API request to get pools", "")
+		//LogInfo("proxy : API request to get pools", "")
 		w.WriteHeader(http.StatusOK)
 	} else {
 		w.WriteHeader(http.StatusNotFound)

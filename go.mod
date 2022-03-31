@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/goglue/eventmanager v0.0.0-20161002023133-9165ce86bb87
+	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/miningmeter/rpc2 v0.0.0-20200213124009-62bee2a193c6
 	github.com/prometheus/client_golang v1.12.1

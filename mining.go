@@ -4,7 +4,6 @@ Handlers for JSON-RPC server and client.
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -48,8 +47,8 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 	}
 
 	if request.extranonce1 != "" {
-		LogInfo("%s > mining.subscribe: %s, %s", sID, wAddr, request.ua, request.extranonce1)
-		LogInfo("%s : restoring old connection", sID, wAddr)
+		//LogInfo("%s > mining.subscribe: %s, %s", sID, wAddr, request.ua, request.extranonce1)
+		//LogInfo("%s : restoring old connection", sID, wAddr)
 
 		if err := w.Restore(request.extranonce1); err != nil {
 			LogError("%s : restore error: %s", sID, wAddr, err.Error())
@@ -58,7 +57,7 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 		temp, _ = client.State.Get("worker")
 		w = temp.(*Worker)
 	} else {
-		LogInfo("%s > mining.subscribe: %s", sID, wAddr, request.ua)
+		//LogInfo("%s > mining.subscribe: %s", sID, wAddr, request.ua)
 	}
 
 	w.ua = request.ua
@@ -80,9 +79,9 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 	}
 
 	if extranonce1 == "" {
-		LogInfo("%s < %s %d", sID, wAddr, wID, extranonce2size)
+		//LogInfo("%s < %s %d", sID, wAddr, wID, extranonce2size)
 	} else {
-		LogInfo("%s < %s %s %d", sID, wAddr, wID, extranonce1, extranonce2size)
+		//LogInfo("%s < %s %s %d", sID, wAddr, wID, extranonce1, extranonce2size)
 	}
 
 	return nil
@@ -108,23 +107,33 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	sID := w.id
 	wAddr := w.addr
 	wDifficulty := w.difficulty
-
+	// //LogInfo("thread safe workers: addr: %v; user: %v; pass: %v", sID, workers.poolAddr, workers.user, workers.password)
 	w.mutex.RUnlock()
 
-	LogInfo("%s > mining.authorize", sID, wAddr)
+	// //LogInfo("thread unsafe worker: addr: %v; user: %v; pool user: %v; pool pass: %v", sID, w.addr, w.user, w.pool.user, w.pool.password)
+	// //LogInfo("%s > mining.authorize", sID, wAddr)
 
-	// The checking of the subscription and the double authorization.
+	// // The checking of the subscription and the double authorization.
 	sErr, err := mining.checkAuthorized(w)
 	if err != nil && sID == "" {
 		LogError("%s : authorize error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
 
-	auth := new(MiningAuthorizeRequest)
-	auth.Decode(params)
+	// auth := new(MiningAuthorizeRequest)
 
+	// if w.pool.user == "" {
+
+	// 	auth.Decode(params)
+
+	// 	//LogInfo("auth decode info: %v", w.id, auth)
+	// } else {
+	// 	auth.password = w.pool.password
+	// 	auth.user = w.pool.user
+	// 	//LogInfo("auth pool info: %v", w.id, auth)
+	// }
 	// The authorizing of the miner.
-	err = w.Auth(auth.user, auth.password)
+	err = w.Auth(workers.user, workers.password)
 	if err != nil {
 		LogError("%s < false: %s", sID, wAddr, err.Error())
 		w.Disconnect()
@@ -132,21 +141,21 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	}
 
 	*res = true
-	LogInfo("%s < true", sID, wAddr)
+	//LogInfo("%s < true", sID, wAddr)
 
 	// The sending of high difficulty to the worker. If this is not done, then with authorization and
 	// connection brakes, the worker will begin to flood proxy with shares with low difficulty and after
 	// a certain number of errors from the proxy, the worker will disconnect.
 	client.Notify("mining.set_difficulty", wDifficulty)
-	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
+	//LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	w.mutex.RLock()
 	pJob := w.pool.job
 	w.mutex.RUnlock()
 
 	if pJob != nil {
-		jobID := pJob[0].(string)
-		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
+		// jobID := pJob[0].(string)
+		//LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
 		client.Notify("mining.notify", pJob)
 	}
 
@@ -207,9 +216,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	isRoll := s.versionbits != ""
 
 	if isRoll {
-		LogInfo("%s > mining.submit: %s, %s, %s", sID, wAddr, s.job, s.nonce, s.versionbits)
+		//LogInfo("%s > mining.submit: %s, %s, %s", sID, wAddr, s.job, s.nonce, s.versionbits)
 	} else {
-		LogInfo("%s > mining.submit: %s, %s", sID, wAddr, s.job, s.nonce)
+		//LogInfo("%s > mining.submit: %s, %s", sID, wAddr, s.job, s.nonce)
 	}
 
 	// The checking compatability of the share and the extensions of the worker.
@@ -235,10 +244,10 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	params[0] = pUser
 	pClient.Call("mining.submit", params, res)
 
-	LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
+	//LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
 
 	if *res {
-		LogInfo("%s > %s", sID, pAddr, strconv.FormatBool(*res))
+		//LogInfo("%s > %s", sID, pAddr, strconv.FormatBool(*res))
 	} else {
 		LogError("%s > %s", sID, pAddr, strconv.FormatBool(*res))
 	}
@@ -256,7 +265,7 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 		mAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
 		mOneAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
 		w.IncShares()
-		LogInfo("%s < %s", sID, wAddr, strconv.FormatBool(*res))
+		//LogInfo("%s < %s", sID, wAddr, strconv.FormatBool(*res))
 	} else {
 		LogError("%s < %s", sID, wAddr, strconv.FormatBool(*res))
 	}
@@ -280,14 +289,14 @@ func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, re
 	sID := w.GetID()
 	wAddr := w.GetAddr()
 
-	LogInfo("%s > mining.extranonce.subscribe", sID, wAddr)
+	//LogInfo("%s > mining.extranonce.subscribe", sID, wAddr)
 
 	if sErr, err := mining.checkAuthorized(w); err != nil {
 		LogError("%s : extranonce.subscribe error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
 
-	LogInfo("%s < true", sID, wAddr)
+	//LogInfo("%s < true", sID, wAddr)
 
 	// The adding a subscribe-extranonce extension on the worker.
 	w.mutex.Lock()
@@ -312,20 +321,20 @@ func (*Mining) Notify(client *rpc2.Client, params []interface{}, res *interface{
 	// The getting of the pool, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
-	jobID := params[0].(string)
+	// jobID := params[0].(string)
 
 	w.mutex.Lock()
-	sID := w.id
-	wAddr := w.addr
+	// sID := w.id
+	// wAddr := w.addr
 	wClient := w.client
-	pAddr := w.pool.addr
+	// pAddr := w.pool.addr
 
 	w.pool.job = params
 	w.mutex.Unlock()
 
-	LogInfo("%s > mining.notify: %s", sID, pAddr, jobID)
+	//LogInfo("%s > mining.notify: %s", sID, pAddr, jobID)
 	if wClient != nil {
-		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
+		//LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
 		wClient.Notify("mining.notify", params)
 	}
 
@@ -349,7 +358,7 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 	difficulty := params[0].(float64)
 
 	w.mutex.RLock()
-	sID := w.id
+	// sID := w.id
 	wAddr := w.addr
 	wUser := w.user
 	wDifficulty := w.difficulty
@@ -359,7 +368,7 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 
 	// The saving of difficulty in the metrics.
 	if wDifficulty != difficulty {
-		LogInfo("%s > mining.set_difficulty: %f", sID, pAddr, difficulty)
+		//LogInfo("%s > mining.set_difficulty: %f", sID, pAddr, difficulty)
 		w.mutex.Lock()
 		w.difficulty = difficulty
 		wClient := w.client
@@ -368,7 +377,7 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 		// The sending of difficulty to the linked worker.
 		if wClient != nil {
 			wClient.Notify("mining.set_difficulty", params)
-			LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
+			//LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
 			mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
 		}
 	}
@@ -394,7 +403,7 @@ func (*Mining) Configure(client *rpc2.Client, params []interface{}, res *interfa
 	sID := w.GetID()
 	wAddr := w.GetAddr()
 
-	LogInfo("%s > mining.configure", sID, wAddr)
+	//LogInfo("%s > mining.configure", sID, wAddr)
 
 	e := new(MiningConfigureRequest)
 	if err := e.Decode(params); err != nil {
@@ -436,8 +445,8 @@ func (*Mining) Configure(client *rpc2.Client, params []interface{}, res *interfa
 		return errors.New("[20, \"Other/Unknown\", null]")
 	}
 
-	j, _ := json.Marshal(data)
-	LogInfo("%s < %s", sID, wAddr, j)
+	// j, _ := json.Marshal(data)
+	//LogInfo("%s < %s", sID, wAddr, j)
 
 	return nil
 }

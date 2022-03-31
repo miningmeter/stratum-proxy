@@ -152,6 +152,7 @@ func DeployContracts(client *ethclient.Client,
 	if err != nil {
 		log.Fatalf("Error::%v", err)
 	}
+
 	fmt.Println("Nonce: ", nonce)
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
@@ -187,6 +188,7 @@ func DeployContracts(client *ethclient.Client,
 	}
 
 	fmt.Println("Deploying Clone Factory contract")
+	auth.Nonce = big.NewInt(int64(nonce + 1))
 	cfaddress, _, _, err := clonefactory.DeployClonefactory(auth, client, laddress, common.HexToAddress(""))
 	if err != nil {
 		log.Fatalf("Error::%v", err)

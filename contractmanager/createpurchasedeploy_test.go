@@ -9,12 +9,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func TestHashrateContractCreation(t *testing.T) {
-	clonefactoryAddress := common.HexToAddress("0x54Ff9Bc163e0031B45dbE340b175CE7873B8796e")
-	accountAddress := common.HexToAddress("0x8F9B59157ea23ddF7528529f614FF09A1884187F")
-	accountPrivateKey := "b883842e5c0a2787f00f9f5474d4ce9f6f9b54766f75330f81614a58ccef8c82"
-	gethNodeAddress := "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a"
+var accountAddress = common.HexToAddress("0xb92E4f5a2694eb15C0e6fB9A3C74dB7A43424cac")
+var accountPrivateKey = "03a2b879f3b1d2ae4da74f74b84b6b68ada1c053e6eefdd0596fe6635ca2525d"
+var gethNodeAddress = "ws://127.0.0.1:7545"
 
+var clonefactoryAddress = common.HexToAddress("0xEA3C21BF6aE276B8d084E79D6Ef45d8BfE1ce7B3")
+
+var hashrateContractAddress = common.HexToAddress("0x3ED63115D92a95538EB111D32f07Ef80C455e12b")
+var poolUrl = "stratum+tcp://stratum.slushpool.com:3333"
+
+func TestHashrateContractCreation(t *testing.T) {
 	// hashrate contract params
 	price := 0
 	limit := 10
@@ -48,13 +52,6 @@ func TestHashrateContractCreation(t *testing.T) {
 }
 
 func TestHashrateContractPurchase(t *testing.T) {
-	clonefactoryAddress := common.HexToAddress("0x54Ff9Bc163e0031B45dbE340b175CE7873B8796e")
-	accountAddress := common.HexToAddress("0x8F9B59157ea23ddF7528529f614FF09A1884187F")
-	accountPrivateKey := "b883842e5c0a2787f00f9f5474d4ce9f6f9b54766f75330f81614a58ccef8c82"
-	gethNodeAddress := "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a"
-
-	hashrateContractAddress := common.HexToAddress("")
-	poolUrl := ""
 
 	client, err := setUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
@@ -83,9 +80,6 @@ func TestHashrateContractPurchase(t *testing.T) {
 }
 
 func TestDeployContracts(t *testing.T) {
-	accountAddress := common.HexToAddress("")
-	accountPrivateKey := ""
-	gethNodeAddress := ""
 
 	client, err := setUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
