@@ -17,13 +17,13 @@ import (
 func TestContractInteraction(t *testing.T) {
 	sigInt := make(chan os.Signal, 1)
 	signal.Notify(sigInt, os.Interrupt)
-	
+
 	//
 	// Create connection to geth node
 	//
-	accountAddress := common.HexToAddress("0x3f573AAAb5cf414ECc3A763cb90a8233870769A1")
-	accountPrivateKey := "13bf255f212342e388d9ff7fcd27ff56823a72a45c30eceabdfcb2da44842c1a"
-	gethNodeAddress := "ws://127.0.0.1:7545"
+	accountAddress := common.HexToAddress("0x8F9B59157ea23ddF7528529f614FF09A1884187F")
+	accountPrivateKey := "b883842e5c0a2787f00f9f5474d4ce9f6f9b54766f75330f81614a58ccef8c82"
+	gethNodeAddress := "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a"
 
 	client, err := contractmanager.SetUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
@@ -53,7 +53,7 @@ func TestContractInteraction(t *testing.T) {
 	// create event signature to parse out creation event
 	contractCreatedSig := []byte("contractCreated(address,string)")
 	contractCreatedSigHash := crypto.Keccak256Hash(contractCreatedSig)
-	loop1:
+loop1:
 	for {
 		select {
 		case err := <-cfSub.Err():
@@ -69,7 +69,7 @@ func TestContractInteraction(t *testing.T) {
 
 	//
 	// Run proxy node
-	//	
+	//
 	os.Args[0] = "Test Contract Interaction"
 	os.Args[1] = "-contract.addr=" + hashrateContractAddress.Hex()
 	os.Args[2] = "-ethNode.addr=" + gethNodeAddress
@@ -78,13 +78,13 @@ func TestContractInteraction(t *testing.T) {
 
 	go main()
 
-	time.Sleep(time.Second*5)
+	time.Sleep(time.Second * 5)
 	//
 	// Purchase hashrate contract
 	//
 	poolUrl := "mining.dev.pool.titan.io:4242?test=test"
 	contractmanager.PurchaseHashrateContract(client, accountAddress, accountPrivateKey, cloneFactoryAddress, hashrateContractAddress, accountAddress, poolUrl)
-	
+
 	// hang until signal interrupt
 	<-sigInt
 }
