@@ -133,7 +133,7 @@ func InitContractManager(eventManager interfaces.IEventManager) {
 	handler := &DestinationUpdateHandler{}
 	eventManager.Attach(contractmanager.DestMsg, handler)
 
-	contractmanager.Run(&ctx, sellerManager, eventManager, "0x3ED63115D92a95538EB111D32f07Ef80C455e12b", "ws://127.0.0.1:7545")
+	contractmanager.Run(&ctx, sellerManager, eventManager, "0x3ED63115D92a95538EB111D32f07Ef80C455e12b∂", "ws://127.0.0.1:7545")
 	// contractmanager.Run(&ctx, sellerManager, eventManager, "0x8c293085389cDE1c938b643364aeC797F1cD6459", "https://ropsten.connect.bloq.cloud/v1/trophy-hair-course")
 }
 
