@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -116,6 +117,18 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	return nil
 }
 
+func (w *Worker) Reset(username string, pass string, pool string) {
+
+	us := &User{user: username, password: pass}
+	w.mutex.Lock()
+	w.pool.password = pass
+	w.pool.user = username
+	w.pool.addr = pool
+	w.pool.client.Close()
+	w.user = us.GetName()
+	w.mutex.Unlock()
+}
+
 /*
 Auth - Auth request.
 
@@ -129,12 +142,21 @@ func (w *Worker) Auth(user, password string) error {
 	// if err != nil {
 	// 	return err
 	// }
+	if user == "" {
+		err := fmt.Errorf("invalid User: '%v'", user)
+		LogError("%w", w.GetID(), err)
+
+	}
 	us := &User{}
 
-	LogInfo("Initialializing user...", w.id)
-	us.Init(workers.poolAddr, user, password)
+	LogInfo("Initialializing user... worker user: %v; pool user: %v; auth user: %v", w.id, w.user, w.pool.user, user)
+	err := us.Init(workers.poolAddr, user, password)
 
-	//LogInfo("User initialized...", w.id)
+	if err != nil {
+		LogError("User Init error: %w", w.GetID(), err)
+	}
+
+	LogInfo("User initialized... %+v\n", w.id, us)
 
 	w.mutex.RLock()
 	sID := w.id
@@ -143,9 +165,9 @@ func (w *Worker) Auth(user, password string) error {
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
-	//LogInfo("worker user before reauth: %s", sID, w.user)
-	reauth := w.user != "" && w.user != us.name
-	//LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
+	LogInfo("before reauth - user: %v; name: %v", sID, wUser, us.name)
+	reauth := wUser != us.GetName()
+	LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
 	if reauth {
 		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
 		if pClient != nil {
@@ -154,7 +176,7 @@ func (w *Worker) Auth(user, password string) error {
 	}
 
 	w.mutex.Lock()
-	LogInfo("worker user after reauth: %s", sID, w.user)
+
 	if w.user == "" || reauth {
 		w.user = us.GetName()
 		w.pool.addr = us.pool
@@ -165,6 +187,8 @@ func (w *Worker) Auth(user, password string) error {
 	}
 	pClient = w.pool.client
 	w.mutex.Unlock()
+
+	LogInfo("reauth: %v; worker user after reauth: %s", sID, reauth, w.user)
 
 	if pClient == nil {
 		go w.Connect()
@@ -203,10 +227,8 @@ func (w *Worker) Connect() error {
 		//LogInfo("%s : already connected.", sID, pAddr)
 		return nil
 	}
-	LogInfo("connecting to the pool - user: %+v\n", sID, wUser)
 
-	LogInfo("connecting to the pool - thread unsafe pool info: %+v\n", sID, w.pool)
-	LogInfo("connecting to the pool - threadsafe pool address: %+v\n", sID, pAddr)
+	LogInfo("connecting to the pool - thread unsafe pool info: %+v\n; threadsafe pool address: %v; user: %v", sID, w.pool, pAddr, wUser)
 
 	// Connecting to the pool.
 	conn, err := net.DialTimeout("tcp", pAddr, 5*time.Second)

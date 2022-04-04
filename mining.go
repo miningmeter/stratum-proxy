@@ -107,7 +107,9 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	sID := w.id
 	wAddr := w.addr
 	wDifficulty := w.difficulty
-	// //LogInfo("thread safe workers: addr: %v; user: %v; pass: %v", sID, workers.poolAddr, workers.user, workers.password)
+	authUser := workers.user
+	authPassword := workers.password
+	//LogInfo("thread safe workers: addr: %v; user: %v; pass: %v", sID, workers.poolAddr, workers.user, workers.password)
 	w.mutex.RUnlock()
 
 	// //LogInfo("thread unsafe worker: addr: %v; user: %v; pool user: %v; pool pass: %v", sID, w.addr, w.user, w.pool.user, w.pool.password)
@@ -133,7 +135,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	// 	//LogInfo("auth pool info: %v", w.id, auth)
 	// }
 	// The authorizing of the miner.
-	err = w.Auth(workers.user, workers.password)
+	err = w.Auth(authUser, authPassword)
 	if err != nil {
 		LogError("%s < false: %s", sID, wAddr, err.Error())
 		w.Disconnect()
@@ -359,11 +361,11 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 
 	w.mutex.RLock()
 	// sID := w.id
-	wAddr := w.addr
-	wUser := w.user
+	// wAddr := w.addr
+	// wUser := w.user
 	wDifficulty := w.difficulty
-	wHash := w.hash
-	pAddr := w.pool.addr
+	// wHash := w.hash
+	// pAddr := w.pool.addr
 	w.mutex.RUnlock()
 
 	// The saving of difficulty in the metrics.
@@ -378,7 +380,7 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 		if wClient != nil {
 			wClient.Notify("mining.set_difficulty", params)
 			//LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
-			mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
+			// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
 		}
 	}
 

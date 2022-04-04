@@ -3,6 +3,7 @@ module gitlab.com/TitanInd/hashrouter
 go 1.17
 
 require (
+	github.com/ambelovsky/gosf v0.0.0-20201109201340-237aea4d6109
 	github.com/ethereum/go-ethereum v1.10.17
 	github.com/goglue/eventmanager v0.0.0-20161002023133-9165ce86bb87
 	github.com/joho/godotenv v1.4.0
@@ -12,6 +13,8 @@ require (
 )
 
 require (
+	github.com/ambelovsky/go-structs v1.1.0 // indirect
+	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
@@ -26,6 +29,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.33.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect

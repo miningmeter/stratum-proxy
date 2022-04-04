@@ -73,8 +73,7 @@ Reset - clear the worker array.
 func (w *Workers) Reset() {
 	w.mutex.Lock()
 	for _, worker := range w.workers {
-		LogInfo("disconnecting worker", worker.id)
-		go worker.DisconnectNoWait()
+		worker.Reset(workers.user, workers.password, workers.poolAddr)
 	}
 	w.mutex.Unlock()
 }

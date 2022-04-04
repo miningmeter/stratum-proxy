@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/ambelovsky/gosf"
+	ws "github.com/ambelovsky/gosf"
 	"github.com/joho/godotenv"
 	rpc2 "github.com/miningmeter/rpc2"
 	"github.com/miningmeter/rpc2/stratumrpc"
@@ -82,9 +84,11 @@ func main() {
 		log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 	}
 
+	// var addr = flag.String("addr", "localhost:8080", "http service address")
+
 	godotenv.Load(".env")
 
-	//LogInfo("proxy : version: %s-%s", "", VERSION, GitCommit)
+	LogInfo("proxy : version: %s-%s", "", VERSION, GitCommit)
 
 	// Initializing of database.
 	// if !db.Init() {
@@ -95,12 +99,14 @@ func main() {
 	workers.Init(poolAddr, os.Getenv("DEFAULT_POOL_USER"), os.Getenv("DEFAULT_POOL_PASSWORD"))
 
 	// Initializing of API and metrics.
-	// //LogInfo("proxy : web server serve on: %s", "", webAddr)
+	// LogInfo("proxy : web server serve on: %s", "", webAddr)
 	// // Users.
 	// http.Handle("/api/v1/users", &API{})
 	// // Metrics.
 	// http.Handle("/metrics", promhttp.Handler())
 	// go http.ListenAndServe(webAddr, nil)
+
+	ws.Startup(map[string]interface{}{"port": 9999})
 
 	eventManager := events.NewEventManager()
 
@@ -109,6 +115,30 @@ func main() {
 	InitWorkerServer(poolAddr)
 
 	os.Exit(0)
+}
+
+type ConnectionInfo struct {
+	IpAddress     string
+	Status        string
+	SocketAddress string
+	Total         string
+	Accepted      string
+	Rejected      string
+}
+
+func InitSocket(in chan ConnectionInfo) {
+	ws.Listen("ws", func(client *ws.Client, request *ws.Request) *ws.Message {
+		return ws.NewSuccessMessage()
+	})
+
+	for connection := range in {
+		ws.Broadcast("", "", &gosf.Message{
+			Body: map[string]interface{}{
+				"type":        "cxns",
+				"connections": []ConnectionInfo{connection},
+			},
+		})
+	}
 }
 
 type DestinationUpdateHandler struct{ interfaces.Subscriber }
@@ -123,9 +153,9 @@ func (d *DestinationUpdateHandler) Update(message interface{}) {
 
 	//LogInfo("Switching to new pool address: %v", "", newPoolAddr)
 
-	workers.Reset()
-
 	workers.Init(newPoolAddr, os.Getenv("TEST_POOL_USER"), os.Getenv("TEST_POOL_PASSWORD"))
+
+	workers.Reset()
 
 	<-time.After(180 * time.Second)
 
@@ -161,7 +191,7 @@ func InitWorkerServer(poolAddr string) {
 
 	server.OnDisconnect(Disconnect)
 
-	//LogInfo("proxy : listen on: %s", "", stratumAddr)
+	LogInfo("proxy : listen on: %s", "", stratumAddr)
 
 	// Waiting of connections.
 	link, _ := net.Listen("tcp", stratumAddr)

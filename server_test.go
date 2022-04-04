@@ -21,9 +21,9 @@ func TestContractInteraction(t *testing.T) {
 	//
 	// Create connection to geth node
 	//
-	accountAddress := common.HexToAddress("0x8F9B59157ea23ddF7528529f614FF09A1884187F")
-	accountPrivateKey := "b883842e5c0a2787f00f9f5474d4ce9f6f9b54766f75330f81614a58ccef8c82"
-	gethNodeAddress := "wss://ropsten.infura.io/ws/v3/4b68229d56fe496e899f07c3d41cb08a"
+	accountAddress := common.HexToAddress("0xE5DE0c1fF501c7c31C4CC895a4e9f8D047E8A85b")
+	accountPrivateKey := "03d2afa85bb362a6b89b01daa9f811a99f57b4f79db77ac6ed543ab926de108d"
+	gethNodeAddress := "ws://127.0.0.1:7545"
 
 	client, err := contractmanager.SetUpClient(gethNodeAddress, accountAddress)
 	if err != nil {
@@ -70,6 +70,7 @@ loop1:
 	//
 	// Run proxy node
 	//
+	os.Args = make([]string, 5)
 	os.Args[0] = "Test Contract Interaction"
 	os.Args[1] = "-contract.addr=" + hashrateContractAddress.Hex()
 	os.Args[2] = "-ethNode.addr=" + gethNodeAddress
@@ -78,11 +79,12 @@ loop1:
 
 	go main()
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 30)
 	//
 	// Purchase hashrate contract
 	//
-	poolUrl := "mining.dev.pool.titan.io:4242?test=test"
+	poolUrl := "stratum.slushpool.com:3333"
+	// poolUrl := "stratum+tcp://stratum.slushpool.com:3333"
 	contractmanager.PurchaseHashrateContract(client, accountAddress, accountPrivateKey, cloneFactoryAddress, hashrateContractAddress, accountAddress, poolUrl)
 
 	// hang until signal interrupt
