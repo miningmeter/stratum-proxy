@@ -211,8 +211,8 @@ func (w *Worker) Connect() error {
 	sID := w.id
 	wAddr := w.addr
 	wUser := w.user
-	wDivider := w.divider
-	wHash := w.hash
+	// wDivider := w.divider
+	// wHash := w.hash
 	pAddr := w.pool.addr
 	pClient := w.pool.client
 	pUser := w.pool.user
@@ -324,10 +324,10 @@ func (w *Worker) Connect() error {
 	}
 
 	// Activating of the metrics.
-	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
-	mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
-	mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
-	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
+	// mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	// mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
+	// mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
+	// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
 
 	//LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
 	status = w.SyncExtensions()
@@ -522,18 +522,18 @@ func (w *Worker) Restore(id string) error {
 	w.client = nil
 	worker.client.State.Set("worker", worker)
 
-	wAddr := worker.addr
-	wUser := worker.user
-	wDifficulty := worker.difficulty
-	wHash := worker.hash
-	pAddr := worker.pool.addr
+	// wAddr := worker.addr
+	// wUser := worker.user
+	// wDifficulty := worker.difficulty
+	// wHash := worker.hash
+	// pAddr := worker.pool.addr
 
 	worker.mutex.Unlock()
 	w.mutex.Unlock()
 
 	// Activating of metrics.
-	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
-	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
+	// mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
 
 	// <-time.After(1 * time.Minute)
 	go w.Death()
@@ -621,18 +621,18 @@ func (w *Worker) UpdateHashrate() {
 
 		w.mutex.RLock()
 		wAddr = w.addr
-		wUser := w.user
-		wHash := w.hash
+		// wUser := w.user
+		// wHash := w.hash
 		wClient := w.client
 		pAddr := w.pool.addr
 		w.mutex.RUnlock()
 
 		if wClient == nil {
-			mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+			// mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
 			break
 		}
 		if pAddr != "" {
-			mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
+			// mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
 		}
 		//LogInfo("%s : hashrate: %.0f h/s", sID, wAddr, hashrate)
 
