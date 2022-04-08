@@ -35,7 +35,7 @@ func TestContractInteraction(t *testing.T) {
 	//
 	cloneFactoryAddress := contractmanager.DeployContracts(client, accountAddress, accountPrivateKey)
 
-	fmt.Printf("Address of CloneFactory contract: %v\n\n", cloneFactoryAddress.Hex())
+	t.Logf("Address of CloneFactory contract: %v\n\n", cloneFactoryAddress.Hex())
 
 	//
 	// Create hashrate contract
@@ -70,7 +70,7 @@ loop1:
 	//
 	// Run proxy node
 	//
-	os.Args = make([]string, 5)
+
 	os.Args[0] = "Test Contract Interaction"
 	os.Args[1] = "-contract.addr=" + hashrateContractAddress.Hex()
 	os.Args[2] = "-ethNode.addr=" + gethNodeAddress

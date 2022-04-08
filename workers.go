@@ -57,14 +57,14 @@ func (w *Workers) remove(id string) {
 Init - init of array.
 */
 func (w *Workers) Init(poolAddr string, user string, password string) {
-	//LogInfo("initializing workers collection... %v, %v, %v", "", poolAddr, user, password)
+	LogInfo("initializing workers collection... %v, %v, %v", "", poolAddr, user, password)
 	w.mutex.Lock()
 	w.workers = make(map[string]*Worker)
 	w.poolAddr = poolAddr
 	w.user = user
 	w.password = password
 	w.mutex.Unlock()
-	//LogInfo("initialized workers collection... %v, %v, %v", "", w.poolAddr, w.user, w.password)
+	LogInfo("initialized workers collection... %v, %v, %v", "", w.poolAddr, w.user, w.password)
 }
 
 /*

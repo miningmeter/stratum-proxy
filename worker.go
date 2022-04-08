@@ -107,6 +107,7 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	w.pool.addr = workers.poolAddr
 	w.pool.extranonce2size = 8
 	w.pool.extensions = make(map[string]interface{})
+	// w.pool.ua = ""
 	w.mutex.Unlock()
 
 	workers.Add(w)
@@ -273,9 +274,9 @@ func (w *Worker) Connect() error {
 		return err
 	}
 	if pSubscription == "" {
-		//LogInfo("%s < mining.subscribe: %s", sID, pAddr, pUA)
+		LogInfo("%s < mining.subscribe: %s", sID, pAddr, pUA)
 	} else {
-		//LogInfo("%s < mining.subscribe: %s, %s", sID, pAddr, pUA, pSubscription)
+		LogInfo("%s < mining.subscribe: %s, %s", sID, pAddr, pUA, pSubscription)
 	}
 	err = client.Call("mining.subscribe", params, &reply)
 	if err != nil {
@@ -331,9 +332,9 @@ func (w *Worker) Connect() error {
 	//LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
 	status = w.SyncExtensions()
 	if status {
-		//LogInfo("%s : extensions already synced", sID, wAddr)
+		LogInfo("%s : extensions already synced", sID, wAddr)
 	} else {
-		//LogInfo("%s : extensions not synced. Forcing reconnect.", sID, wAddr)
+		LogInfo("%s : extensions not synced. Forcing reconnect.", sID, wAddr)
 	}
 	status = w.UpdateData(!status)
 
@@ -601,9 +602,9 @@ UpdateHashrate - updating of hashrate.
 func (w *Worker) UpdateHashrate() {
 	var hashrate float64
 
-	// sID := w.GetID()
+	sID := w.GetID()
 	wAddr := w.GetAddr()
-	//LogInfo("%s : init hashrate calculation", sID, wAddr)
+	LogInfo("%s : init hashrate calculation", sID, wAddr)
 
 	for {
 		for i := 0; i <= 1; i++ {
@@ -723,7 +724,7 @@ func (w *Worker) DeathNoWait() {
 	// wUser := w.user
 	// wHash := w.hash
 	wClient := w.client
-	pAddr := w.pool.addr
+	// pAddr := w.pool.addr
 	w.mutex.RUnlock()
 
 	if wClient == nil {
@@ -732,21 +733,21 @@ func (w *Worker) DeathNoWait() {
 
 		//LogInfo("%s : deleting metrics", sID, wAddr)
 
-		if pAddr != "" {
+		// if pAddr != "" {
 
-			// mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			// mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			// mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			// mOneAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			// ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			// if !ok {
-			// 	LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
-			// }
-			// ok = mWorkerUp.DeleteLabelValues(tag, wAddr, wUser)
-			// if !ok {
-			// 	LogError("%s : error delete proxy_worker_up metric.", sID, wAddr)
-			// }
-		}
+		// mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mOneAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
+		// }
+		// ok = mWorkerUp.DeleteLabelValues(tag, wAddr, wUser)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_worker_up metric.", sID, wAddr)
+		// }
+		// }
 		//LogInfo("%s : removed from proxy", sID, wAddr)
 	}
 }

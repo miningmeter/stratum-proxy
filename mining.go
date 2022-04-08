@@ -57,7 +57,7 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 		temp, _ = client.State.Get("worker")
 		w = temp.(*Worker)
 	} else {
-		//LogInfo("%s > mining.subscribe: %s", sID, wAddr, request.ua)
+		LogInfo("%s > mining.subscribe: %s", sID, wAddr, request.ua)
 	}
 
 	w.ua = request.ua
@@ -79,9 +79,9 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 	}
 
 	if extranonce1 == "" {
-		//LogInfo("%s < %s %d", sID, wAddr, wID, extranonce2size)
+		LogInfo("%s < %s %d", sID, wAddr, wID, extranonce2size)
 	} else {
-		//LogInfo("%s < %s %s %d", sID, wAddr, wID, extranonce1, extranonce2size)
+		LogInfo("%s < %s %s %d", sID, wAddr, wID, extranonce1, extranonce2size)
 	}
 
 	return nil
@@ -218,9 +218,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	isRoll := s.versionbits != ""
 
 	if isRoll {
-		//LogInfo("%s > mining.submit: %s, %s, %s", sID, wAddr, s.job, s.nonce, s.versionbits)
+		LogInfo("%s > mining.submit: %s, %s, %s", sID, wAddr, s.job, s.nonce, s.versionbits)
 	} else {
-		//LogInfo("%s > mining.submit: %s, %s", sID, wAddr, s.job, s.nonce)
+		LogInfo("%s > mining.submit: %s, %s", sID, wAddr, s.job, s.nonce)
 	}
 
 	// The checking compatability of the share and the extensions of the worker.
