@@ -67,7 +67,7 @@ func init() {
 	flag.StringVar(&poolAddr, "pool.addr", "mining.dev.pool.titan.io:4242", "Address and port for mining pool")
 	flag.BoolVar(&syslog, "syslog", false, "On true adapt log to out in syslog, hide date and colors")
 	flag.StringVar(&dbPath, "db.path", "proxy.db", "Filepath for SQLite database")
-	flag.StringVar(&tag, "metrics.tag", stratumAddr, "Prometheus metrics proxy tag")
+	// flag.StringVar(&tag, "metrics.tag", stratumAddr, "Prometheus metrics proxy tag")
 	flag.StringVar(&hashrateContract, "contract.addr", "", "Address of smart contract that node is servicing")
 	flag.StringVar(&ethNodeAddr, "ethNode.addr", "", "Address of Ethereum RPC node to connect to via websocket")
 

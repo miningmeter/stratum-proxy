@@ -757,9 +757,9 @@ DisconnectPool - disconnect pool.
 */
 func (w *Worker) DisconnectPool() {
 	w.mutex.RLock()
-	sID := w.id
-	wHash := w.hash
-	pAddr := w.pool.addr
+	// sID := w.id
+	// wHash := w.hash
+	// pAddr := w.pool.addr
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
@@ -775,14 +775,14 @@ func (w *Worker) DisconnectPool() {
 		pClient.Close()
 
 		// The deleting of metrics.
-		ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
-		}
-		ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
-		}
+		// ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
+		// }
+		// ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
+		// }
 
 		//LogInfo("%s : disconnected from proxy", sID, pAddr)
 	}
