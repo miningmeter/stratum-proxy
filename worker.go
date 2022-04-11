@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -386,7 +387,7 @@ func (w *Worker) SyncExtensions() bool {
 		return true
 	}
 
-	//LogInfo("%s : sync extensions", sID, a)
+	LogInfo("%s : sync extensions", sID, a)
 	r := new(MiningConfigureRequest)
 	r.extensions = he
 	params, err := r.Encode()
@@ -395,18 +396,18 @@ func (w *Worker) SyncExtensions() bool {
 		return true
 	}
 	if params != nil {
-		// j, _ := json.Marshal(params)
-		//LogInfo("%s < mining.configure: %s", sID, a, j)
+		j, _ := json.Marshal(params)
+		LogInfo("%s < mining.configure: %s", sID, a, j)
 		err = c.Call("mining.configure", params, &reply)
 		if err != nil {
 			LogError("%s : sync extensions error: %s", sID, a, err.Error())
 			return true
 		}
-		// j, _ = json.Marshal(reply)
-		//LogInfo("%s > %s", sID, a, j)
+		j, _ = json.Marshal(reply)
+		LogInfo("%s > %s", sID, a, j)
 
 		if reply == nil {
-			//LogInfo("%s : sync empty response. Set default values", sID, a)
+			LogInfo("%s : sync empty response. Set default values", sID, a)
 			return true
 		}
 
@@ -416,7 +417,7 @@ func (w *Worker) SyncExtensions() bool {
 			return true
 		}
 
-		//LogInfo("%s : fix extensions with non-exist response", sID, a)
+		LogInfo("%s : fix extensions with non-exist response", sID, a)
 		for k, v := range re.extensions {
 			extensions[k] = v
 		}
@@ -426,10 +427,10 @@ func (w *Worker) SyncExtensions() bool {
 			}
 		}
 
-		// j, _ = json.Marshal(extensions)
-		//LogInfo("%s > computed pool extensions: %s", sID, a, j)
+		j, _ = json.Marshal(extensions)
+		LogInfo("%s > computed pool extensions: %s", sID, a, j)
 	} else {
-		//LogInfo("%s : sync not required ", sID, a)
+		LogInfo("%s : sync not required ", sID, a)
 		extensions = e
 	}
 
