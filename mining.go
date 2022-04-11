@@ -47,8 +47,8 @@ func (*Mining) Subscribe(client *rpc2.Client, params []interface{}, res *interfa
 	}
 
 	if request.extranonce1 != "" {
-		//LogInfo("%s > mining.subscribe: %s, %s", sID, wAddr, request.ua, request.extranonce1)
-		//LogInfo("%s : restoring old connection", sID, wAddr)
+		LogInfo("%s > mining.subscribe: %s, %s", sID, wAddr, request.ua, request.extranonce1)
+		LogInfo("%s : restoring old connection", sID, wAddr)
 
 		if err := w.Restore(request.extranonce1); err != nil {
 			LogError("%s : restore error: %s", sID, wAddr, err.Error())
@@ -158,7 +158,9 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	if pJob != nil {
 		jobID := pJob[0].(string)
 		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
-		client.Notify("mining.notify", pJob)
+		err := client.Notify("mining.notify", pJob)
+
+		LogError("mining.notify notification error: %v", sID, err)
 	}
 
 	return nil

@@ -299,8 +299,7 @@ func (w *Worker) Connect() error {
 	w.pool.extranonce2size = response.extranonce2size
 	w.mutex.Unlock()
 
-	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr,
-		response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
+	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr, response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
 
 	// Sending authorize command to the pool.
 	msgAuth := MiningAuthorizeRequest{pUser, pPassword}
