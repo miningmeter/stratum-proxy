@@ -126,7 +126,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 
 	// if w.pool.user == "" {
 
-	// 	auth.Decode(params)
+	// auth.Decode(params)
 
 	// 	//LogInfo("auth decode info: %v", w.id, auth)
 	// } else {

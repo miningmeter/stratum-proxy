@@ -253,12 +253,12 @@ func WaitWorker(conn net.Conn, server *rpc2.Server, connectionStream chan *Conne
 	// Running of connection handler in goroutine.
 	go server.ServeCodecWithState(stratumrpc.NewStratumCodec(conn), state)
 	// Waiting 3 seconds of worker initializing, which will begin when the worker sends the commands.
-	<-time.After(3 * time.Second)
-	// If worker not initialized, we kill connection.
-	if w.GetID() == "" {
-		LogInfo("%s : disconnect by silence", "", addr)
-		conn.Close()
-	}
+	// <-time.After(3 * time.Second)
+	// // If worker not initialized, we kill connection.
+	// if w.GetID() == "" {
+	// 	LogInfo("%s : disconnect by silence", "", addr)
+	// 	conn.Close()
+	// }
 
 	// connectionStream <- BuildConnectionInfo(w)
 }
