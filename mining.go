@@ -137,7 +137,7 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	// The authorizing of the miner.
 	err = w.Auth(authUser, authPassword)
 	if err != nil {
-		LogError("%s < false: %s", sID, wAddr, err.Error())
+		LogError("Authorize Error: %s < false: %s", sID, wAddr, err.Error())
 		w.Disconnect()
 		return err
 	}

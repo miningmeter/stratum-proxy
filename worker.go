@@ -481,10 +481,6 @@ func (w *Worker) UpdateData(force bool) bool {
 		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
 
-		if !v.(bool) {
-			return true
-		}
-
 		LogInfo("%s : reconnect to proxy", sID, a)
 		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
@@ -674,21 +670,21 @@ Disconnect - disconnecting of worker.
 */
 func (w *Worker) Disconnect() {
 	w.mutex.Lock()
-	// sID := w.id
-	// wAddr := w.addr
+	sID := w.id
+	wAddr := w.addr
 	wClient := w.client
 
 	w.client = nil
 	w.mutex.Unlock()
 
 	if wClient != nil {
-		//LogInfo("%s : disconnecting", sID, wAddr)
+		LogInfo("%s : disconnecting", sID, wAddr)
 
 		wClient.Close()
 
 		go w.Death()
 
-		//LogInfo("%s : disconnected from proxy", sID, wAddr)
+		LogInfo("%s : disconnected from proxy", sID, wAddr)
 	}
 }
 
@@ -763,9 +759,9 @@ DisconnectPool - disconnect pool.
 */
 func (w *Worker) DisconnectPool() {
 	w.mutex.RLock()
-	// sID := w.id
+	sID := w.id
 	// wHash := w.hash
-	// pAddr := w.pool.addr
+	pAddr := w.pool.addr
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
@@ -776,7 +772,7 @@ func (w *Worker) DisconnectPool() {
 		w.difficulty = 2097152.0
 		w.mutex.Unlock()
 
-		//LogInfo("%s : disconnecting", sID, pAddr)
+		LogInfo("%s : disconnecting", sID, pAddr)
 		// Closing of pool connection.
 		pClient.Close()
 
