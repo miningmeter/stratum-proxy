@@ -429,7 +429,7 @@ func (w *Worker) SyncExtensions() bool {
 		j, _ = json.Marshal(extensions)
 		LogInfo("%s > computed pool extensions: %s", sID, a, j)
 	} else {
-		LogInfo("%s : sync not required ", sID, a)
+		LogInfo("%s : sync not required - params: %+v\n ", sID, a, params)
 		extensions = e
 	}
 
