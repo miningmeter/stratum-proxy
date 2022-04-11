@@ -62,7 +62,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&stratumAddr, "stratum.addr", "127.0.0.1:3333", "Address and port for stratum")
+	flag.StringVar(&stratumAddr, "stratum.addr", "0.0.0.0:3333", "Address and port for stratum")
 	flag.StringVar(&webAddr, "web.addr", "127.0.0.1:8080", "Address and port for web server and metrics")
 	flag.StringVar(&poolAddr, "pool.addr", "mining.dev.pool.titan.io:4242", "Address and port for mining pool")
 	flag.BoolVar(&syslog, "syslog", false, "On true adapt log to out in syslog, hide date and colors")
