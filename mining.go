@@ -156,8 +156,8 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	w.mutex.RUnlock()
 
 	if pJob != nil {
-		// jobID := pJob[0].(string)
-		//LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
+		jobID := pJob[0].(string)
+		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
 		client.Notify("mining.notify", pJob)
 	}
 

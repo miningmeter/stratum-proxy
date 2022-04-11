@@ -624,21 +624,21 @@ func (w *Worker) UpdateHashrate() {
 		wAddr = w.addr
 		// wUser := w.user
 		// wHash := w.hash
-		wClient := w.client
-		pAddr := w.pool.addr
+		// wClient := w.client
+		// pAddr := w.pool.addr
 		w.mutex.RUnlock()
 
-		if wClient == nil {
-			// mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			break
-		}
-		if pAddr != "" {
-			// mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
-		}
-		//LogInfo("%s : hashrate: %.0f h/s", sID, wAddr, hashrate)
+		// if wClient == nil {
+		// 	// mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// 	break
+		// }
+		// if pAddr != "" {
+		// 	// mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
+		// }
+		LogInfo("%s : hashrate: %.0f h/s", sID, wAddr, hashrate)
 
 	}
-	//LogInfo("%s : stop hashrate calculation", sID, wAddr)
+	LogInfo("%s : stop hashrate calculation", sID, wAddr)
 }
 
 /*
