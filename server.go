@@ -258,7 +258,7 @@ func WaitWorker(conn net.Conn, server *rpc2.Server, connectionStream chan *Conne
 	if w.GetID() == "" {
 		LogInfo("%s : disconnect by silence", "", addr)
 		conn.Close()
-		w.DisconnectNoWait()
+		// w.DisconnectNoWait()
 	}
 
 	// connectionStream <- BuildConnectionInfo(w)
