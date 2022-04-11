@@ -244,7 +244,11 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	}
 
 	params[0] = pUser
-	pClient.Call("mining.submit", params, res)
+	err = pClient.Call("mining.submit", params, res)
+
+	if err != nil {
+		LogError("mining.submit call error: ", sID, err)
+	}
 
 	LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
 
@@ -256,9 +260,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 
 	// The increasing the counter of the accepted shares.
 	// mSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
-	w.mutex.RLock()
-	// wDifficulty := w.difficulty
-	w.mutex.RUnlock()
+	// w.mutex.RLock()
+	// // wDifficulty := w.difficulty
+	// w.mutex.RUnlock()
 	// mOneSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
 
 	// If the pool has validated the work - we are increasing
