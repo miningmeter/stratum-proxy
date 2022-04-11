@@ -209,6 +209,7 @@ func (s *MiningConfigureRequest) Encode() ([]interface{}, error) {
 	if s.extensions == nil {
 		return nil, errors.New("no extensions in mining.configure request")
 	}
+
 	extensions := make([]string, 0)
 	params := make(map[string]interface{})
 	for ke, ve := range s.extensions {

@@ -367,6 +367,7 @@ func (w *Worker) SyncExtensions() bool {
 	pe := w.pool.extensions
 	w.mutex.RUnlock()
 
+	LogInfo("%s : sync extensions - worker: %+v\n; pool:%+v\n;", sID, a, e, pe)
 	if len(pe) > 0 {
 		return true
 	}
@@ -386,8 +387,6 @@ func (w *Worker) SyncExtensions() bool {
 		LogError("%s : connection closed unexpectedly", sID, a)
 		return true
 	}
-
-	LogInfo("%s : sync extensions", sID, a)
 	r := new(MiningConfigureRequest)
 	r.extensions = he
 	params, err := r.Encode()
