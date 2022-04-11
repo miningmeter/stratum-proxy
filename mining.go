@@ -267,9 +267,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 		// mAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
 		// mOneAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
 		w.IncShares()
-		//LogInfo("%s < %s", sID, wAddr, strconv.FormatBool(*res))
+		LogInfo("mining.submit result: %s < %s", sID, wAddr, strconv.FormatBool(*res))
 	} else {
-		LogError("%s < %s", sID, wAddr, strconv.FormatBool(*res))
+		LogError("mining.submit result: %s < %s", sID, wAddr, strconv.FormatBool(*res))
 	}
 
 	return sErr
