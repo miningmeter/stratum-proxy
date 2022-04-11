@@ -299,8 +299,8 @@ func (w *Worker) Connect() error {
 	w.pool.extranonce2size = response.extranonce2size
 	w.mutex.Unlock()
 
-	//LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr,
-	// response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
+	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr,
+		response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
 
 	// Sending authorize command to the pool.
 	msgAuth := MiningAuthorizeRequest{pUser, pPassword}
@@ -481,6 +481,10 @@ func (w *Worker) UpdateData(force bool) bool {
 		c.Notify("mining.set_extranonce", []interface{}{e, e2})
 		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
+
+		if !v.(bool) {
+			return true
+		}
 
 		LogInfo("%s : reconnect to proxy", sID, a)
 		// w.Disconnect not requesting here, he will requested on closing connection.
