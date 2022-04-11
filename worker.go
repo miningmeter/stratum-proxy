@@ -467,7 +467,7 @@ func (w *Worker) UpdateData(force bool) bool {
 	e2 := w.pool.extranonce2size
 	v, u := w.extensions["subscribe-extranonce"]
 	w.mutex.RUnlock()
-
+	LogInfo("worker subscribe-extranonce - exists: %v; value: %v", sID, u, v)
 	u = u && v.(bool) && e != "" && !force
 
 	if c == nil {
@@ -476,11 +476,11 @@ func (w *Worker) UpdateData(force bool) bool {
 	}
 
 	if u {
-		//LogInfo("%s : update extranonce1: %s", sID, a, e)
+		LogInfo("%s : update extranonce1: %s", sID, a, e)
 		c.Notify("mining.set_extranonce", []interface{}{e, e2})
-		//LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
+		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
-		//LogInfo("%s : reconnect to proxy", sID, a)
+		LogInfo("%s : reconnect to proxy", sID, a)
 		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
 

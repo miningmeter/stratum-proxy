@@ -179,7 +179,7 @@ func (d *DestinationUpdateHandler) Update(message interface{}) {
 	oldUser := workers.user
 	oldPass := workers.password
 
-	//LogInfo("Switching to new pool address: %v", "", newPoolAddr)
+	LogInfo("Switching to new pool address: %v", "", newPoolAddr)
 
 	workers.Init(newPoolAddr, os.Getenv("TEST_POOL_USER"), os.Getenv("TEST_POOL_PASSWORD"))
 
@@ -244,7 +244,7 @@ WaitWorker - waiting of worker init.
 */
 func WaitWorker(conn net.Conn, server *rpc2.Server, connectionStream chan *ConnectionInfo) {
 	addr := conn.RemoteAddr().String()
-	//LogInfo("%s : try connect to proxy", "", addr)
+	LogInfo("%s : try connect to proxy", "", addr)
 	// Initializing of worker.
 	w := &Worker{addr: addr}
 	// Linking of JSON-RPC connection to worker.
@@ -272,8 +272,8 @@ Connect - processing of connecting worker to proxy.
 func Connect(client *rpc2.Client, w *Worker) {
 	wAddr := w.GetAddr()
 	if err := w.Init(client); err == nil {
-		// sID := w.GetID()
-		//LogInfo("%s : connect to proxy", sID, wAddr)
+		sID := w.GetID()
+		LogInfo("%s : connect to proxy", sID, wAddr)
 	} else {
 		LogError("%s : error connect to proxy: %s", "", wAddr, err.Error())
 		client.Close()
