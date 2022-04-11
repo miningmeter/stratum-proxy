@@ -323,20 +323,20 @@ func (*Mining) Notify(client *rpc2.Client, params []interface{}, res *interface{
 	// The getting of the pool, linked with the connection.
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
-	// jobID := params[0].(string)
+	jobID := params[0].(string)
 
 	w.mutex.Lock()
-	// sID := w.id
-	// wAddr := w.addr
+	sID := w.id
+	wAddr := w.addr
 	wClient := w.client
-	// pAddr := w.pool.addr
+	pAddr := w.pool.addr
 
 	w.pool.job = params
 	w.mutex.Unlock()
 
-	//LogInfo("%s > mining.notify: %s", sID, pAddr, jobID)
+	LogInfo("%s > mining.notify: %s", sID, pAddr, jobID)
 	if wClient != nil {
-		//LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
+		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
 		wClient.Notify("mining.notify", params)
 	}
 

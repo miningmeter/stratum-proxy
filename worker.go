@@ -148,6 +148,7 @@ func (w *Worker) Auth(user, password string) error {
 		LogError("%w", w.GetID(), err)
 
 	}
+
 	us := &User{}
 
 	LogInfo("Initialializing user... worker user: %v; pool user: %v; auth user: %v", w.id, w.user, w.pool.user, user)
@@ -166,8 +167,8 @@ func (w *Worker) Auth(user, password string) error {
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
-	LogInfo("before reauth - user: %v; name: %v", sID, wUser, us.name)
-	reauth := wUser != us.GetName()
+	LogInfo("before reauth - user: %v; name: %v; p", sID, wUser, us.GetName())
+	reauth := w.pool.user == user && workers.poolAddr == w.pool.addr && wUser != us.GetName()
 	LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
 	if reauth {
 		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
@@ -645,14 +646,14 @@ DisconnectNotify - monitoring of connection status.
 */
 func (w *Worker) DisconnectNotify() {
 	w.mutex.RLock()
-	// sID := w.id
-	// a := w.pool.addr
+	sID := w.id
+	a := w.pool.addr
 	p := w.pool.client
 	w.mutex.RUnlock()
 
-	//LogInfo("%s : set monitoring rpc connection", sID, a)
+	LogInfo("%s : set monitoring rpc connection", sID, a)
 	<-p.DisconnectNotify()
-	//LogInfo("%s : rpc connection gone", sID, a)
+	LogInfo("%s : rpc connection gone", sID, a)
 
 	w.mutex.RLock()
 	p = w.pool.client

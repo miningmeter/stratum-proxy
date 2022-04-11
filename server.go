@@ -256,7 +256,7 @@ func WaitWorker(conn net.Conn, server *rpc2.Server, connectionStream chan *Conne
 	<-time.After(3 * time.Second)
 	// If worker not initialized, we kill connection.
 	if w.GetID() == "" {
-		//LogInfo("%s : disconnect by silence", "", addr)
+		LogInfo("%s : disconnect by silence", "", addr)
 		conn.Close()
 	}
 
