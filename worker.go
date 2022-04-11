@@ -394,7 +394,7 @@ func (w *Worker) SyncExtensions() bool {
 		LogError("%s : encode extensions error: %s", sID, a, err.Error())
 		return true
 	}
-	LogInfo("%s : sync params: %+v\n ", sID, params)
+	LogInfo("sync params: %+v\n ", sID, params)
 	if params != nil {
 		j, _ := json.Marshal(params)
 		LogInfo("%s < mining.configure: %s", sID, a, j)
