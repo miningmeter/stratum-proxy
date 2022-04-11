@@ -247,7 +247,7 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	err = pClient.Call("mining.submit", params, res)
 
 	if err != nil {
-		LogError("mining.submit call error: ", sID, err)
+		LogError("mining.submit call error: %v", sID, err)
 	}
 
 	LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
