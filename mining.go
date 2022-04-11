@@ -212,6 +212,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 
 	s := new(MiningSubmitRequest)
 	err := s.Decode(params)
+
+	LogError("mining.submit params: %s : %s", sID, wAddr, params)
+
 	if err != nil {
 		LogError("mining.submit error: %s : %s", sID, wAddr, err.Error())
 	}
