@@ -289,6 +289,7 @@ ExtranonceSubscribe - the handler of mining.extranonce.subscribe from the worker
 @return error|nil
 */
 func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, res *bool) error {
+	LogInfo("ExtranonceSubscribe", "pending....")
 	*res = true
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
