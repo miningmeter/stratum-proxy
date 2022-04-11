@@ -168,7 +168,7 @@ func (w *Worker) Auth(user, password string) error {
 	w.mutex.RUnlock()
 
 	LogInfo("before reauth - user: %v; name: %v; p", sID, wUser, us.GetName())
-	reauth := w.pool.user == user && workers.poolAddr == w.pool.addr && wUser != us.GetName()
+	reauth := w.user != "" && w.pool.user == user && workers.poolAddr == w.pool.addr && wUser != us.GetName()
 	LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
 	if reauth {
 		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
