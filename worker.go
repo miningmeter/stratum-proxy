@@ -310,14 +310,14 @@ func (w *Worker) Connect() error {
 		return err
 	}
 	var breply bool
-	//LogInfo("%s < mining.authorize: %s, %s", sID, pAddr, pUser, pPassword)
+	LogInfo("%s < mining.authorize: %s, %s", sID, pAddr, pUser, pPassword)
 	err = client.Call("mining.authorize", params, &breply)
 	if err != nil {
 		LogError("%s > mining.authorize error: %s", sID, pAddr, err.Error())
 		w.Disconnect()
 		return err
 	}
-	//LogInfo("%s > mining.authorize: %t", sID, pAddr, breply)
+	LogInfo("%s > mining.authorize: %t", sID, pAddr, breply)
 	if !breply {
 		LogError("%s : access denied to pool", sID, pAddr)
 		w.Disconnect()
@@ -330,7 +330,7 @@ func (w *Worker) Connect() error {
 	// mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
 	// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
 
-	//LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
+	LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
 	status = w.SyncExtensions()
 	if status {
 		LogInfo("%s : extensions already synced", sID, wAddr)
@@ -343,7 +343,7 @@ func (w *Worker) Connect() error {
 		return nil
 	}
 
-	//LogInfo("%s : connected to pool %s", sID, wAddr, pAddr)
+	LogInfo("%s : connected to pool %s", sID, wAddr, pAddr)
 
 	return nil
 }
