@@ -295,14 +295,14 @@ func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, re
 	sID := w.GetID()
 	wAddr := w.GetAddr()
 
-	//LogInfo("%s > mining.extranonce.subscribe", sID, wAddr)
+	LogInfo("%s > mining.extranonce.subscribe", sID, wAddr)
 
 	if sErr, err := mining.checkAuthorized(w); err != nil {
 		LogError("%s : extranonce.subscribe error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
 
-	//LogInfo("%s < true", sID, wAddr)
+	LogInfo("%s < true", sID, wAddr)
 
 	// The adding a subscribe-extranonce extension on the worker.
 	w.mutex.Lock()

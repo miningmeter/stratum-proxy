@@ -481,9 +481,7 @@ func (w *Worker) UpdateData(force bool) bool {
 		c.Notify("mining.set_extranonce", []interface{}{e, e2})
 		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
-		if !v.(bool) {
-			return true
-		}
+
 		LogInfo("%s : reconnect to proxy", sID, a)
 		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
