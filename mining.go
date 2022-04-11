@@ -213,7 +213,7 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	s := new(MiningSubmitRequest)
 	err := s.Decode(params)
 	if err != nil {
-		LogError("%s : %s", sID, wAddr, err.Error())
+		LogError("mining.submit error: %s : %s", sID, wAddr, err.Error())
 	}
 	isRoll := s.versionbits != ""
 
