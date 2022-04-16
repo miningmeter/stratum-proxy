@@ -25,7 +25,7 @@ Encode - encoding of subscribe request.
 func (s *MiningSubscribeRequest) Encode() ([]interface{}, error) {
 	if s.extranonce1 != "" {
 		if !ValidateHexString(s.extranonce1) {
-			return nil, fmt.Errorf("Invalid extranonce1 = %s in mining.subscribe", s.extranonce1)
+			return nil, fmt.Errorf("invalid extranonce1 = %s in mining.subscribe", s.extranonce1)
 		}
 	}
 
@@ -39,12 +39,12 @@ Decode - decoding of subscribe request.
 func (s *MiningSubscribeRequest) Decode(data []interface{}) error {
 	count := len(data)
 	if count == 0 || count > 2 {
-		return errors.New("Invalid params count in mining.subscribe")
+		return errors.New("invalid params count in mining.subscribe")
 	}
 	if count > 0 {
 		ua, ok := data[0].(string)
 		if !ok {
-			return errors.New("Invalid useragent type in mining.subscribe")
+			return errors.New("invalid useragent type in mining.subscribe")
 		}
 		s.ua = ua
 	}
@@ -52,10 +52,10 @@ func (s *MiningSubscribeRequest) Decode(data []interface{}) error {
 	if count > 1 {
 		extranonce1, ok := data[1].(string)
 		if !ok {
-			return errors.New("Invalid extranonce1 type in mining.subscribe")
+			return errors.New("invalid extranonce1 type in mining.subscribe")
 		}
 		if extranonce1 != "" && !ValidateHexString(extranonce1) {
-			return fmt.Errorf("Invalid param extranonce1 = %s in mining.subscribe", extranonce1)
+			return fmt.Errorf("invalid param extranonce1 = %s in mining.subscribe", extranonce1)
 		}
 		s.extranonce1 = extranonce1
 	}
@@ -77,10 +77,10 @@ Encode - encoding of subscribe response.
 */
 func (s *MiningSubscribeResponse) Encode() ([]interface{}, error) {
 	if s.extranonce1 != "" && !ValidateHexString(s.extranonce1) {
-		return nil, fmt.Errorf("Invalid extranonce1 = %s in mining.subscribe response", s.extranonce1)
+		return nil, fmt.Errorf("invalid extranonce1 = %s in mining.subscribe response", s.extranonce1)
 	}
 	if s.extranonce2size == 0 {
-		return nil, errors.New("No extranonce2_size in mining.subscribe response")
+		return nil, errors.New("no extranonce2_size in mining.subscribe response")
 	}
 
 	var subscriptions []interface{}
@@ -107,15 +107,15 @@ Decode - decoding of subscribe response.
 func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 	count := len(data)
 	if count != 3 {
-		return errors.New("Invalid count of params in mining.subscribe response")
+		return errors.New("invalid count of params in mining.subscribe response")
 	}
 	subscriptions, ok := data[0].([]interface{})
 	if !ok {
-		return errors.New("Invalid subscriptions type in mining.subscribe response")
+		return errors.New("invalid subscriptions type in mining.subscribe response")
 	}
 	count = len(subscriptions)
 	if count == 0 {
-		return errors.New("No subscriptions in mining.subscribe response")
+		return errors.New("no subscriptions in mining.subscribe response")
 	}
 	// Correction of violation of subscribing message standard, using an array of subscription
 	// parts instead of an array of subscriptions. If subscriptions array has a one element,
@@ -128,29 +128,37 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 		subscriptions = []interface{}{subscriptions}
 	}
 	s.subscriptions = make(map[string]string)
+
+	miningMatcher, rErr := regexp.Compile(`^mining\..+$`)
+
+	if rErr != nil {
+		err := fmt.Errorf("regexp error: %s", rErr.Error())
+
+		return err
+	}
+
 	for _, sb := range subscriptions {
 		subscription, ok := sb.([]interface{})
 		if !ok {
-			return errors.New("Invalid subscription type in mining.subscribe response")
+			return errors.New("invalid subscription type in mining.subscribe response")
 		}
 		count = len(subscription)
 		if count != 2 {
-			return errors.New("Invalid subscription param count in mining.subscribe response")
+			return errors.New("invalid subscription param count in mining.subscribe response")
 		}
 		name, ok := subscription[0].(string)
 		if !ok {
-			return errors.New("Invalid subscription name type in mining.subscribe response")
+			return errors.New("invalid subscription name type in mining.subscribe response")
 		}
 		value, ok := subscription[1].(string)
 		if !ok {
-			return errors.New("Invalid subscription value type in mining.subscribe response")
+			return errors.New("invalid subscription value type in mining.subscribe response")
 		}
-		matched, rErr := regexp.MatchString("^mining\\..+$", name)
-		if !matched || rErr != nil {
-			err := fmt.Errorf("Invalid subscription name = %s in mining.subscribe response", name)
-			if rErr != nil {
-				err = fmt.Errorf("%s. Regexp error: %s", err.Error(), rErr.Error())
-			}
+		matched := miningMatcher.MatchString(name)
+
+		if !matched {
+			err := fmt.Errorf("invalid subscription name = %s in mining.subscribe response", name)
+
 			return err
 		}
 		s.subscriptions[name] = value
@@ -158,10 +166,10 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 
 	extranonce1, ok := data[1].(string)
 	if !ok {
-		return errors.New("Invalid extranonce1 type in mining.subscribe response")
+		return errors.New("invalid extranonce1 type in mining.subscribe response")
 	}
 	if extranonce1 != "" && (!ValidateHexString(extranonce1)) {
-		return fmt.Errorf("Invalid extranonce1 = %s in mining.subscribe response", extranonce1)
+		return fmt.Errorf("invalid extranonce1 = %s in mining.subscribe response", extranonce1)
 	}
 	s.extranonce1 = extranonce1
 
@@ -171,10 +179,10 @@ func (s *MiningSubscribeResponse) Decode(data []interface{}) error {
 	} else if d, ok := data[2].(int); ok {
 		extranonce2size = d
 	} else {
-		return errors.New("Invalid extranonce2_size type in mining.subscribe response")
+		return errors.New("invalid extranonce2_size type in mining.subscribe response")
 	}
 	if extranonce2size == 0 {
-		return errors.New("Invalid extranonce2_size in mining.subscribe response")
+		return errors.New("invalid extranonce2_size in mining.subscribe response")
 	}
 	s.extranonce2size = extranonce2size
 
@@ -199,8 +207,9 @@ Encode - encoding of configure request.
 */
 func (s *MiningConfigureRequest) Encode() ([]interface{}, error) {
 	if s.extensions == nil {
-		return nil, errors.New("No extensions in mining.configure request")
+		return nil, errors.New("no extensions in mining.configure request")
 	}
+
 	extensions := make([]string, 0)
 	params := make(map[string]interface{})
 	for ke, ve := range s.extensions {
@@ -225,18 +234,18 @@ Decode - decoding of configure request.
 */
 func (s *MiningConfigureRequest) Decode(data []interface{}) error {
 	if len(data) != 2 {
-		return errors.New("Invalid count of params in mining.configure request")
+		return errors.New("invalid count of params in mining.configure request")
 	}
 	extensions, ok := data[0].([]interface{})
 	if !ok {
-		return errors.New("Invalid extensions type in mining.configure request")
+		return errors.New("invalid extensions type in mining.configure request")
 	}
 	if len(extensions) == 0 {
-		return errors.New("No extensions in mining.configure request")
+		return errors.New("no extensions in mining.configure request")
 	}
 	params, ok := data[1].(map[string]interface{})
 	if !ok {
-		return errors.New("Invalid params type in mining.configure request")
+		return errors.New("invalid params type in mining.configure request")
 	}
 	s.extensions = make(map[string]interface{})
 
@@ -257,7 +266,7 @@ func (s *MiningConfigureRequest) Decode(data []interface{}) error {
 	}
 	if len(s.extensions) == 0 {
 		s.extensions = nil
-		return errors.New("No extensions in mining.configure request")
+		return errors.New("no extensions in mining.configure request")
 	}
 
 	return nil
@@ -281,11 +290,11 @@ Encode - encoding of configure response.
 */
 func (s *MiningConfigureResponse) Encode() (map[string]interface{}, error) {
 	if s.extensions == nil {
-		return nil, errors.New("No extensions in mining.configure response")
+		return nil, errors.New("no extensions in mining.configure response")
 	}
 	count := len(s.extensions)
 	if count == 0 {
-		return nil, errors.New("Empty extensions array in mining.configure response")
+		return nil, errors.New("empty extensions array in mining.configure response")
 	}
 
 	return s.extensions, nil
@@ -297,10 +306,10 @@ Decode - decoding of configure response.
 func (s *MiningConfigureResponse) Decode(data interface{}) error {
 	result, ok := data.(map[string]interface{})
 	if !ok {
-		return errors.New("Invalid data in mining.configure response")
+		return errors.New("invalid data in mining.configure response")
 	}
 	if len(result) == 0 {
-		return errors.New("Empty data in mining.configure response")
+		return errors.New("empty data in mining.configure response")
 	}
 	s.extensions = make(map[string]interface{})
 	for kp, vp := range result {
@@ -315,7 +324,7 @@ func (s *MiningConfigureResponse) Decode(data interface{}) error {
 	}
 	if len(s.extensions) == 0 {
 		s.extensions = nil
-		return errors.New("No extensions in mining.configure response")
+		return errors.New("no extensions in mining.configure response")
 	}
 
 	return nil
@@ -334,7 +343,7 @@ Encode - encoding of authorize request.
 */
 func (s *MiningAuthorizeRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
-		return nil, fmt.Errorf("Empty user in mining.authorize")
+		return nil, fmt.Errorf("empty user in mining.authorize Encode()")
 	}
 	return []interface{}{s.user, s.password}, nil
 }
@@ -346,19 +355,19 @@ Decode - decoding of authorize request.
 func (s *MiningAuthorizeRequest) Decode(data []interface{}) error {
 	count := len(data)
 	if count != 2 {
-		return errors.New("Invalid params count in mining.authorize")
+		return errors.New("invalid params count in mining.authorize")
 	}
 	user, ok := data[0].(string)
 	if !ok {
-		return errors.New("Invalid user type in mining.authorize")
+		return errors.New("invalid user type in mining.authorize")
 	}
 	if user == "" {
-		return errors.New("Empty user in mining.authorize")
+		return errors.New("empty user in mining.authorize")
 	}
 	s.user = user
 	password, ok := data[1].(string)
 	if !ok {
-		return errors.New("Invalid password type in mining.authorize")
+		return errors.New("invalid password type in mining.authorize")
 	}
 	s.password = password
 
@@ -382,13 +391,13 @@ Encode - encoding of share.
 */
 func (s *MiningSubmitRequest) Encode() ([]interface{}, error) {
 	if s.user == "" {
-		return nil, fmt.Errorf("Empty user in mining.submit request")
+		return nil, fmt.Errorf("empty user in mining.submit request")
 	}
 	if s.job == "" {
-		return nil, fmt.Errorf("Empty job in mining.submit request")
+		return nil, fmt.Errorf("empty job in mining.submit request")
 	}
 	if !ValidateHexString(s.job) {
-		return nil, fmt.Errorf("Invalid job = %s in mining.submit request", s.job)
+		return nil, fmt.Errorf("invalid job = %s in mining.submit request", s.job)
 	}
 	if err := s.validateDword(s.extranonce2, "extranonce2"); err != nil {
 		return nil, fmt.Errorf("%s in mining.submit request", err.Error())
@@ -420,35 +429,35 @@ Decode - decoding of share.
 func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	count := len(data)
 	if count < 5 || count > 6 {
-		return errors.New("Invalid params count in mining.submit request")
+		return errors.New("invalid params count in mining.submit request")
 	}
 	user, ok := data[0].(string)
 	if !ok {
-		return errors.New("Invalid user type in mining.submit request")
+		return errors.New("invalid user type in mining.submit request")
 	}
 	if user == "" {
-		return errors.New("Empty user in mining.submit request")
+		return errors.New("empty user in mining.submit request")
 	}
 	s.user = user
 	job, ok := data[1].(string)
 	if !ok {
-		return errors.New("Invalid job type in mining.submit request")
+		return errors.New("invalid job type in mining.submit request")
 	}
 	if job == "" {
-		return errors.New("Empty job in mining.submit request")
+		return errors.New("empty job in mining.submit request")
 	}
 	s.job = job
 	extranonce2, ok := data[2].(string)
 	if !ok {
-		return errors.New("Invalid extranonce2 type in mining.submit request")
+		return errors.New("invalid extranonce2 type in mining.submit request")
 	}
 	if !ValidateHexString(extranonce2) {
-		return fmt.Errorf("Invalid extranonce2 in mining.submit request")
+		return fmt.Errorf("invalid extranonce2 in mining.submit request")
 	}
 	s.extranonce2 = extranonce2
 	ntime, ok := data[3].(string)
 	if !ok {
-		return errors.New("Invalid ntime type in mining.submit request")
+		return errors.New("invalid ntime type in mining.submit request")
 	}
 	if err := s.validateDword(ntime, "ntime"); err != nil {
 		return fmt.Errorf("%s in mining.submit request", err.Error())
@@ -456,7 +465,7 @@ func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	s.ntime = ntime
 	nonce, ok := data[4].(string)
 	if !ok {
-		return errors.New("Invalid nonce type in mining.submit request")
+		return errors.New("invalid nonce type in mining.submit request")
 	}
 	if err := s.validateDword(nonce, "nonce"); err != nil {
 		return fmt.Errorf("%s in mining.submit request", err.Error())
@@ -466,7 +475,7 @@ func (s *MiningSubmitRequest) Decode(data []interface{}) error {
 	if count == 6 {
 		versionbits, ok := data[5].(string)
 		if !ok {
-			return errors.New("Invalid versionbits type in mining.submit request")
+			return errors.New("invalid versionbits type in mining.submit request")
 		}
 		if err := s.validateDword(versionbits, "versionbits"); err != nil {
 			return fmt.Errorf("%s in mining.submit request", err.Error())
@@ -487,14 +496,14 @@ validateDword - validating of dword string representation.
 */
 func (*MiningSubmitRequest) validateDword(dword string, name string) error {
 	if dword == "" {
-		return fmt.Errorf("Empty %s", name)
+		return fmt.Errorf("empty %s", name)
 	}
 	count := len(dword)
 	if count != 8 {
-		return fmt.Errorf("Invalid length = %d of %s = %s", count, name, dword)
+		return fmt.Errorf("invalid length = %d of %s = %s", count, name, dword)
 	}
 	if !ValidateHexString(dword) {
-		return fmt.Errorf("Invalid %s = %s", name, dword)
+		return fmt.Errorf("invalid %s = %s", name, dword)
 	}
 
 	return nil

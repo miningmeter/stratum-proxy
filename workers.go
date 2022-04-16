@@ -9,14 +9,28 @@ import (
 Workers - array of connected workers.
 */
 type Workers struct {
-	mutex   sync.RWMutex
-	workers map[string]*Worker
+	mutex    sync.RWMutex
+	workers  map[string]*Worker
+	poolAddr string
+	user     string
+	password string
 }
 
 func (w *Workers) add(worker *Worker) bool {
 	id := worker.GetID()
 
 	if wr := w.get(id); wr == nil {
+
+		//LogInfo("pool: %+v\n", id, worker.pool)
+		//LogInfo("worker user: %v", id, worker.user)
+		//LogInfo("workers user: %v", id, w.user)
+		//LogInfo("workers pass: %v", id, w.password)
+
+		worker.user = w.user
+		worker.pool.user = w.user
+		worker.pool.password = w.password
+
+		//LogInfo("adding worker; addr: %v; pool: %v; user: %v; pass: %v", id, worker.addr, worker.pool.addr, worker.pool.user, worker.pool.password)
 		w.workers[id] = worker
 	} else {
 		return false
@@ -37,16 +51,30 @@ func (w *Workers) remove(id string) {
 	if worker := w.get(id); worker != nil {
 		delete(w.workers, id)
 	}
-
-	return
 }
 
 /*
 Init - init of array.
 */
-func (w *Workers) Init() {
+func (w *Workers) Init(poolAddr string, user string, password string) {
+	LogInfo("initializing workers collection... %v, %v, %v", "", poolAddr, user, password)
 	w.mutex.Lock()
 	w.workers = make(map[string]*Worker)
+	w.poolAddr = poolAddr
+	w.user = user
+	w.password = password
+	w.mutex.Unlock()
+	LogInfo("initialized workers collection... %v, %v, %v", "", w.poolAddr, w.user, w.password)
+}
+
+/*
+Reset - clear the worker array.
+*/
+func (w *Workers) Reset() {
+	w.mutex.Lock()
+	for _, worker := range w.workers {
+		worker.Reset(workers.user, workers.password, workers.poolAddr)
+	}
 	w.mutex.Unlock()
 }
 

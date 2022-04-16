@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,18 +35,20 @@ type Worker struct {
 	window     map[int64]float64      // Shares counter window.
 	client     *rpc2.Client           // Pointer on connection to worker.
 	extensions map[string]interface{} // Extensions of the worker.
-	pool       struct {
-		addr            string                 // ip:port.
-		user            string                 // User.
-		password        string                 // Password.
-		subscription    string                 // Notify-id of connection to pool.
-		ua              string                 // User Agent, that sended to pool.
-		extranonce1     string                 // Extranonce1of connection to pool.
-		extranonce2size int                    // Size of Extranonce2.
-		client          *rpc2.Client           // Pointer on connection to pool.
-		extensions      map[string]interface{} // Extensions of the pool.
-		job             []interface{}          // Last job from pool.
-	}
+	pool       WorkerPool
+}
+
+type WorkerPool struct {
+	addr            string                 // ip:port.
+	user            string                 // User.
+	password        string                 // Password.
+	subscription    string                 // Notify-id of connection to pool.
+	ua              string                 // User Agent, that sended to pool.
+	extranonce1     string                 // Extranonce1of connection to pool.
+	extranonce2size int                    // Size of Extranonce2.
+	client          *rpc2.Client           // Pointer on connection to pool.
+	extensions      map[string]interface{} // Extensions of the pool.
+	job             []interface{}          // Last job from pool.
 }
 
 /*
@@ -102,8 +105,10 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	// Send high difficulty to the worker. Else on slow Auth worker send to proxy big amount
 	// of shares with low difficulty. The proxy will reject these shares and worker will disconnect.
 	w.difficulty = 2097152.0
+	w.pool.addr = workers.poolAddr
 	w.pool.extranonce2size = 8
 	w.pool.extensions = make(map[string]interface{})
+	// w.pool.ua = ""
 	w.mutex.Unlock()
 
 	workers.Add(w)
@@ -112,6 +117,18 @@ func (w *Worker) Init(client *rpc2.Client) error {
 	go w.UpdateHashrate()
 
 	return nil
+}
+
+func (w *Worker) Reset(username string, pass string, pool string) {
+
+	us := &User{user: username, password: pass}
+	w.mutex.Lock()
+	w.pool.password = pass
+	w.pool.user = username
+	w.pool.addr = pool
+	w.pool.client.Close()
+	w.user = us.GetName()
+	w.mutex.Unlock()
 }
 
 /*
@@ -123,10 +140,26 @@ Auth - Auth request.
 @return error
 */
 func (w *Worker) Auth(user, password string) error {
-	us, err := db.GetUser(user)
-	if err != nil {
-		return err
+	// us, err := db.GetUser(user)
+	// if err != nil {
+	// 	return err
+	// }
+	if user == "" {
+		err := fmt.Errorf("invalid User: '%v'", user)
+		LogError("%w", w.GetID(), err)
+
 	}
+
+	us := &User{}
+
+	LogInfo("Initialializing user... worker user: %v; pool user: %v; auth user: %v", w.id, w.user, w.pool.user, user)
+	err := us.Init(workers.poolAddr, user, password)
+
+	if err != nil {
+		LogError("User Init error: %w", w.GetID(), err)
+	}
+
+	LogInfo("User initialized... %+v\n", w.id, us)
 
 	w.mutex.RLock()
 	sID := w.id
@@ -135,7 +168,9 @@ func (w *Worker) Auth(user, password string) error {
 	pClient := w.pool.client
 	w.mutex.RUnlock()
 
-	reauth := w.user != "" && w.user != us.name
+	LogInfo("before reauth - user: %v; name: %v; p", sID, wUser, us.GetName())
+	reauth := w.user != "" && w.pool.user == user && workers.poolAddr == w.pool.addr && wUser != us.GetName()
+	LogInfo("reauth: %v", sID, strconv.FormatBool(reauth))
 	if reauth {
 		LogInfo("%s : change session from user %s to user %s", sID, wAddr, wUser, us.name)
 		if pClient != nil {
@@ -144,16 +179,19 @@ func (w *Worker) Auth(user, password string) error {
 	}
 
 	w.mutex.Lock()
+
 	if w.user == "" || reauth {
-		w.user = us.name
+		w.user = us.GetName()
 		w.pool.addr = us.pool
 		w.pool.user = us.user
 		w.pool.password = us.password
-		w.hash = us.hash
-		w.divider = us.divider
+		w.hash = "sha256" //us.hash
+		w.divider = 1.0   //us.divider
 	}
 	pClient = w.pool.client
 	w.mutex.Unlock()
+
+	LogInfo("reauth: %v; worker user after reauth: %s", sID, reauth, w.user)
 
 	if pClient == nil {
 		go w.Connect()
@@ -171,11 +209,12 @@ func (w *Worker) Connect() error {
 	var status bool
 
 	w.mutex.RLock()
+
 	sID := w.id
 	wAddr := w.addr
 	wUser := w.user
-	wDivider := w.divider
-	wHash := w.hash
+	// wDivider := w.divider
+	// wHash := w.hash
 	pAddr := w.pool.addr
 	pClient := w.pool.client
 	pUser := w.pool.user
@@ -186,12 +225,13 @@ func (w *Worker) Connect() error {
 	pUA := "miningmeter-proxy/1.0"
 
 	// Check existence of the connection.
-	LogInfo("%s : check connect", sID, pAddr)
+	//LogInfo("%s : check connect", sID, pAddr)
 	if pClient != nil {
-		LogInfo("%s : already connected.", sID, pAddr)
+		//LogInfo("%s : already connected.", sID, pAddr)
 		return nil
 	}
-	LogInfo("%s : connecting", sID, pAddr)
+
+	LogInfo("connecting to the pool - thread unsafe pool info: %+v\n; threadsafe pool address: %v; user: %v", sID, w.pool, pAddr, wUser)
 
 	// Connecting to the pool.
 	conn, err := net.DialTimeout("tcp", pAddr, 5*time.Second)
@@ -259,8 +299,7 @@ func (w *Worker) Connect() error {
 	w.pool.extranonce2size = response.extranonce2size
 	w.mutex.Unlock()
 
-	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr,
-		response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
+	LogInfo("%s > mining.subscribe: %s, %s, %d", sID, pAddr, response.subscriptions["mining.notify"], response.extranonce1, response.extranonce2size)
 
 	// Sending authorize command to the pool.
 	msgAuth := MiningAuthorizeRequest{pUser, pPassword}
@@ -279,17 +318,17 @@ func (w *Worker) Connect() error {
 		return err
 	}
 	LogInfo("%s > mining.authorize: %t", sID, pAddr, breply)
-	if breply == false {
+	if !breply {
 		LogError("%s : access denied to pool", sID, pAddr)
 		w.Disconnect()
 		return err
 	}
 
 	// Activating of the metrics.
-	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
-	mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
-	mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
-	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
+	// mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	// mPoolUp.WithLabelValues(tag, wHash, pAddr).Set(1)
+	// mPoolDivider.WithLabelValues(tag, wHash, pAddr).Set(wDivider)
+	// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(0)
 
 	LogInfo("%s : sync extensions to pool %s", sID, wAddr, pAddr)
 	status = w.SyncExtensions()
@@ -327,6 +366,7 @@ func (w *Worker) SyncExtensions() bool {
 	pe := w.pool.extensions
 	w.mutex.RUnlock()
 
+	LogInfo("%s : sync extensions - worker: %+v\n; pool:%+v\n;", sID, a, e, pe)
 	if len(pe) > 0 {
 		return true
 	}
@@ -346,8 +386,6 @@ func (w *Worker) SyncExtensions() bool {
 		LogError("%s : connection closed unexpectedly", sID, a)
 		return true
 	}
-
-	LogInfo("%s : sync extensions", sID, a)
 	r := new(MiningConfigureRequest)
 	r.extensions = he
 	params, err := r.Encode()
@@ -355,6 +393,7 @@ func (w *Worker) SyncExtensions() bool {
 		LogError("%s : encode extensions error: %s", sID, a, err.Error())
 		return true
 	}
+	LogInfo("sync params: %+v\n ", sID, params)
 	if params != nil {
 		j, _ := json.Marshal(params)
 		LogInfo("%s < mining.configure: %s", sID, a, j)
@@ -390,7 +429,7 @@ func (w *Worker) SyncExtensions() bool {
 		j, _ = json.Marshal(extensions)
 		LogInfo("%s > computed pool extensions: %s", sID, a, j)
 	} else {
-		LogInfo("%s : sync not required ", sID, a)
+		LogInfo("%s : sync not required - params: %+v\n ", sID, a, params)
 		extensions = e
 	}
 
@@ -423,12 +462,12 @@ func (w *Worker) UpdateData(force bool) bool {
 	w.mutex.RLock()
 	sID := w.id
 	a := w.addr
-	c := w.client
+	c := w.pool.client
 	e := w.pool.extranonce1
 	e2 := w.pool.extranonce2size
 	v, u := w.extensions["subscribe-extranonce"]
 	w.mutex.RUnlock()
-
+	LogInfo("worker subscribe-extranonce - exists: %v; value: %v", sID, u, v)
 	u = u && v.(bool) && e != "" && !force
 
 	if c == nil {
@@ -441,6 +480,7 @@ func (w *Worker) UpdateData(force bool) bool {
 		c.Notify("mining.set_extranonce", []interface{}{e, e2})
 		LogInfo("%s < mining.set_extranonce: %s, %d", sID, a, e, e2)
 	} else {
+
 		LogInfo("%s : reconnect to proxy", sID, a)
 		// w.Disconnect not requesting here, he will requested on closing connection.
 		c.Close()
@@ -484,19 +524,20 @@ func (w *Worker) Restore(id string) error {
 	w.client = nil
 	worker.client.State.Set("worker", worker)
 
-	wAddr := worker.addr
-	wUser := worker.user
-	wDifficulty := worker.difficulty
-	wHash := worker.hash
-	pAddr := worker.pool.addr
+	// wAddr := worker.addr
+	// wUser := worker.user
+	// wDifficulty := worker.difficulty
+	// wHash := worker.hash
+	// pAddr := worker.pool.addr
 
 	worker.mutex.Unlock()
 	w.mutex.Unlock()
 
 	// Activating of metrics.
-	mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
-	mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
+	// mWorkerUp.WithLabelValues(tag, wAddr, wUser).Set(1)
+	// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(wDifficulty)
 
+	// <-time.After(1 * time.Minute)
 	go w.Death()
 
 	return nil
@@ -582,19 +623,19 @@ func (w *Worker) UpdateHashrate() {
 
 		w.mutex.RLock()
 		wAddr = w.addr
-		wUser := w.user
-		wHash := w.hash
-		wClient := w.client
-		pAddr := w.pool.addr
+		// wUser := w.user
+		// wHash := w.hash
+		// wClient := w.client
+		// pAddr := w.pool.addr
 		w.mutex.RUnlock()
 
-		if wClient == nil {
-			mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			break
-		}
-		if pAddr != "" {
-			mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
-		}
+		// if wClient == nil {
+		// 	// mSpeed.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// 	break
+		// }
+		// if pAddr != "" {
+		// 	// mSpeed.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(hashrate)
+		// }
 		LogInfo("%s : hashrate: %.0f h/s", sID, wAddr, hashrate)
 
 	}
@@ -647,43 +688,69 @@ func (w *Worker) Disconnect() {
 	}
 }
 
+func (w *Worker) DisconnectNoWait() {
+	w.mutex.Lock()
+	sID := w.id
+	wAddr := w.pool.addr
+	wUser := w.user
+	wClient := w.client
+
+	w.client = nil
+	w.mutex.Unlock()
+
+	if wClient != nil {
+		//LogInfo("%s : disconnecting", sID, wAddr)
+
+		wClient.Close()
+
+		go w.DeathNoWait()
+
+		LogInfo("%s : disconnected from proxy; address: %v", sID, wUser, wAddr)
+	}
+}
+
 /*
 Death - preparing of worker delete.
 */
 func (w *Worker) Death() {
 	<-time.After(1 * time.Minute)
 
+	// Removing of metrics.
+	w.DeathNoWait()
+}
+
+func (w *Worker) DeathNoWait() {
 	w.mutex.RLock()
 	sID := w.id
-	wAddr := w.addr
-	wUser := w.user
-	wHash := w.hash
+	// wAddr := w.addr
+	// wUser := w.user
+	// wHash := w.hash
 	wClient := w.client
-	pAddr := w.pool.addr
+	// pAddr := w.pool.addr
 	w.mutex.RUnlock()
 
 	if wClient == nil {
 		workers.remove(sID)
 		w.DisconnectPool()
 
-		LogInfo("%s : deleting metrics", sID, wAddr)
+		//LogInfo("%s : deleting metrics", sID, wAddr)
 
-		if pAddr != "" {
-			// Removing of metrics.
-			mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			mOneAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
-			if !ok {
-				LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
-			}
-			ok = mWorkerUp.DeleteLabelValues(tag, wAddr, wUser)
-			if !ok {
-				LogError("%s : error delete proxy_worker_up metric.", sID, wAddr)
-			}
-		}
-		LogInfo("%s : removed from proxy", sID, wAddr)
+		// if pAddr != "" {
+
+		// mSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mOneSended.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// mOneAccepted.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// ok := mDifficulty.DeleteLabelValues(tag, wAddr, wUser, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_worker_difficulty metric", sID, pAddr)
+		// }
+		// ok = mWorkerUp.DeleteLabelValues(tag, wAddr, wUser)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_worker_up metric.", sID, wAddr)
+		// }
+		// }
+		//LogInfo("%s : removed from proxy", sID, wAddr)
 	}
 }
 
@@ -693,7 +760,7 @@ DisconnectPool - disconnect pool.
 func (w *Worker) DisconnectPool() {
 	w.mutex.RLock()
 	sID := w.id
-	wHash := w.hash
+	// wHash := w.hash
 	pAddr := w.pool.addr
 	pClient := w.pool.client
 	w.mutex.RUnlock()
@@ -710,15 +777,15 @@ func (w *Worker) DisconnectPool() {
 		pClient.Close()
 
 		// The deleting of metrics.
-		ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
-		}
-		ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
-		if !ok {
-			LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
-		}
+		// ok := mPoolDivider.DeleteLabelValues(tag, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_pool_divider metric", sID, pAddr)
+		// }
+		// ok = mPoolUp.DeleteLabelValues(tag, wHash, pAddr)
+		// if !ok {
+		// 	LogError("%s : error delete proxy_pool_up metric", sID, pAddr)
+		// }
 
-		LogInfo("%s : disconnected from proxy", sID, pAddr)
+		//LogInfo("%s : disconnected from proxy", sID, pAddr)
 	}
 }

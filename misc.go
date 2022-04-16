@@ -121,7 +121,7 @@ func ValidateHexString(str string) bool {
 LogInfo - the informational log.
 */
 func LogInfo(format, sid string, v ...interface{}) {
-	header := make([]byte, 0, 0)
+	header := make([]byte, 0)
 	if sid != "" {
 		header = append(header, fmt.Sprintf("[%s] : ", sid)...)
 	}

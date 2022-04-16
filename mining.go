@@ -4,7 +4,6 @@ Handlers for JSON-RPC server and client.
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -108,46 +107,60 @@ func (*Mining) Authorize(client *rpc2.Client, params []interface{}, res *bool) e
 	sID := w.id
 	wAddr := w.addr
 	wDifficulty := w.difficulty
-	pJob := w.pool.job
+	authUser := workers.user
+	authPassword := workers.password
+	//LogInfo("thread safe workers: addr: %v; user: %v; pass: %v", sID, workers.poolAddr, workers.user, workers.password)
 	w.mutex.RUnlock()
 
-	LogInfo("%s > mining.authorize", sID, wAddr)
+	// //LogInfo("thread unsafe worker: addr: %v; user: %v; pool user: %v; pool pass: %v", sID, w.addr, w.user, w.pool.user, w.pool.password)
+	// //LogInfo("%s > mining.authorize", sID, wAddr)
 
-	// The checking of the subscription and the double authorization.
+	// // The checking of the subscription and the double authorization.
 	sErr, err := mining.checkAuthorized(w)
 	if err != nil && sID == "" {
 		LogError("%s : authorize error: %s", sID, wAddr, err.Error())
 		return errors.New(sErr)
 	}
 
-	auth := new(MiningAuthorizeRequest)
-	auth.Decode(params)
+	// auth := new(MiningAuthorizeRequest)
 
+	// if w.pool.user == "" {
+
+	// auth.Decode(params)
+
+	// 	//LogInfo("auth decode info: %v", w.id, auth)
+	// } else {
+	// 	auth.password = w.pool.password
+	// 	auth.user = w.pool.user
+	// 	//LogInfo("auth pool info: %v", w.id, auth)
+	// }
 	// The authorizing of the miner.
-	err = w.Auth(auth.user, auth.password)
+	err = w.Auth(authUser, authPassword)
 	if err != nil {
-		LogError("%s < false: %s", sID, wAddr, err.Error())
+		LogError("Authorize Error: %s < false: %s", sID, wAddr, err.Error())
 		w.Disconnect()
 		return err
 	}
 
 	*res = true
-	LogInfo("%s < true", sID, wAddr)
+	//LogInfo("%s < true", sID, wAddr)
 
 	// The sending of high difficulty to the worker. If this is not done, then with authorization and
 	// connection brakes, the worker will begin to flood proxy with shares with low difficulty and after
 	// a certain number of errors from the proxy, the worker will disconnect.
 	client.Notify("mining.set_difficulty", wDifficulty)
-	LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
+	//LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, wDifficulty)
 
 	w.mutex.RLock()
-	pJob = w.pool.job
+	pJob := w.pool.job
 	w.mutex.RUnlock()
 
 	if pJob != nil {
 		jobID := pJob[0].(string)
 		LogInfo("%s < mining.notify: %s", sID, wAddr, jobID)
-		client.Notify("mining.notify", pJob)
+		err := client.Notify("mining.notify", pJob)
+
+		LogError("mining.notify notification error: %v", sID, err)
 	}
 
 	return nil
@@ -173,9 +186,9 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	w.mutex.RLock()
 	sID := w.id
 	wAddr := w.addr
-	wUser := w.user
-	wHash := w.hash
-	wDivider := w.divider
+	// wUser := w.user
+	// wHash := w.hash
+	// wDivider := w.divider
 	wExt := w.extensions
 	pAddr := w.pool.addr
 	pUser := w.pool.user
@@ -201,8 +214,11 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 
 	s := new(MiningSubmitRequest)
 	err := s.Decode(params)
+
+	LogError("mining.submit params: %s : %s", sID, wAddr, params)
+
 	if err != nil {
-		LogError("%s : %s", sID, wAddr, err.Error())
+		LogError("mining.submit error: %s : %s", sID, wAddr, err.Error())
 	}
 	isRoll := s.versionbits != ""
 
@@ -233,7 +249,11 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	}
 
 	params[0] = pUser
-	pClient.Call("mining.submit", params, res)
+	err = pClient.Call("mining.submit", params, res)
+
+	if err != nil {
+		LogError("mining.submit call error: %v", sID, err)
+	}
 
 	LogInfo("%s < mining.submit: %s, %s", sID, pAddr, s.job, s.nonce)
 
@@ -244,21 +264,21 @@ func (*Mining) Submit(client *rpc2.Client, params []interface{}, res *bool) erro
 	}
 
 	// The increasing the counter of the accepted shares.
-	mSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
-	w.mutex.RLock()
-	wDifficulty := w.difficulty
-	w.mutex.RUnlock()
-	mOneSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
+	// mSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
+	// w.mutex.RLock()
+	// // wDifficulty := w.difficulty
+	// w.mutex.RUnlock()
+	// mOneSended.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
 
 	// If the pool has validated the work - we are increasing
 	// the counter of the accepted shares.
 	if *res {
-		mAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
-		mOneAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
+		// mAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Inc()
+		// mOneAccepted.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Add(wDifficulty / wDivider)
 		w.IncShares()
-		LogInfo("%s < %s", sID, wAddr, strconv.FormatBool(*res))
+		LogInfo("mining.submit result: %s < %s", sID, wAddr, strconv.FormatBool(*res))
 	} else {
-		LogError("%s < %s", sID, wAddr, strconv.FormatBool(*res))
+		LogError("mining.submit result: %s < %s", sID, wAddr, strconv.FormatBool(*res))
 	}
 
 	return sErr
@@ -274,6 +294,7 @@ ExtranonceSubscribe - the handler of mining.extranonce.subscribe from the worker
 @return error|nil
 */
 func (*Mining) ExtranonceSubscribe(client *rpc2.Client, params []interface{}, res *bool) error {
+	LogInfo("ExtranonceSubscribe", "pending....")
 	*res = true
 	temp, _ := client.State.Get("worker")
 	w := temp.(*Worker)
@@ -349,17 +370,17 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 	difficulty := params[0].(float64)
 
 	w.mutex.RLock()
-	sID := w.id
-	wAddr := w.addr
-	wUser := w.user
+	// sID := w.id
+	// wAddr := w.addr
+	// wUser := w.user
 	wDifficulty := w.difficulty
-	wHash := w.hash
-	pAddr := w.pool.addr
+	// wHash := w.hash
+	// pAddr := w.pool.addr
 	w.mutex.RUnlock()
 
 	// The saving of difficulty in the metrics.
 	if wDifficulty != difficulty {
-		LogInfo("%s > mining.set_difficulty: %f", sID, pAddr, difficulty)
+		//LogInfo("%s > mining.set_difficulty: %f", sID, pAddr, difficulty)
 		w.mutex.Lock()
 		w.difficulty = difficulty
 		wClient := w.client
@@ -368,8 +389,8 @@ func (*Mining) SetDifficulty(client *rpc2.Client, params []interface{}, res *int
 		// The sending of difficulty to the linked worker.
 		if wClient != nil {
 			wClient.Notify("mining.set_difficulty", params)
-			LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
-			mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
+			//LogInfo("%s < mining.set_difficulty: %f", sID, wAddr, difficulty)
+			// mDifficulty.WithLabelValues(tag, wAddr, wUser, wHash, pAddr).Set(difficulty)
 		}
 	}
 
@@ -394,7 +415,7 @@ func (*Mining) Configure(client *rpc2.Client, params []interface{}, res *interfa
 	sID := w.GetID()
 	wAddr := w.GetAddr()
 
-	LogInfo("%s > mining.configure", sID, wAddr)
+	//LogInfo("%s > mining.configure", sID, wAddr)
 
 	e := new(MiningConfigureRequest)
 	if err := e.Decode(params); err != nil {
@@ -436,8 +457,8 @@ func (*Mining) Configure(client *rpc2.Client, params []interface{}, res *interfa
 		return errors.New("[20, \"Other/Unknown\", null]")
 	}
 
-	j, _ := json.Marshal(data)
-	LogInfo("%s < %s", sID, wAddr, j)
+	// j, _ := json.Marshal(data)
+	//LogInfo("%s < %s", sID, wAddr, j)
 
 	return nil
 }

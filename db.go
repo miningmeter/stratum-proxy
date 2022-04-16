@@ -87,6 +87,7 @@ var (
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.na.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.eu.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('sha256.jp.mine.zpool.ca', 3333, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
+		"INSERT INTO `pools` (`host`, `port`, `hash_id`) VALUES ('mining.dev.pool.titan.io', 4242, (SELECT `id` FROM `hashes` WHERE `hash` = 'sha256'))",
 	}
 )
 
@@ -105,18 +106,18 @@ If the database is exist and correct we are opening connect to it.
 @return bool if initializing successfull.
 */
 func (d *Db) Init() bool {
-	LogInfo("proxy : check database file on path %s", "", dbPath)
+	//LogInfo("proxy : check database file on path %s", "", dbPath)
 	_, err := os.Stat(dbPath)
 	if os.IsPermission(err) {
 		LogError("proxy : access denied to %s", "", dbPath)
 		return false
 	}
 	if os.IsNotExist(err) {
-		LogInfo("proxy : database file not exist", "")
+		//LogInfo("proxy : database file not exist", "")
 		d.Create()
 	}
 
-	LogInfo("proxy : opening database file on path %s", "", dbPath)
+	//LogInfo("proxy : opening database file on path %s", "", dbPath)
 	d.handle, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		LogError("proxy : error opening database on path %s: %s", "", dbPath, err.Error())
@@ -132,7 +133,7 @@ Create - the creating the database and filling it of default values.
 @return error
 */
 func (d *Db) Create() error {
-	LogInfo("proxy : creating database on path %s", "", dbPath)
+	//LogInfo("proxy : creating database on path %s", "", dbPath)
 	td, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		LogError("proxy : error creating database on path %s: %s", "", dbPath, err.Error())
@@ -144,7 +145,7 @@ func (d *Db) Create() error {
 		LogError("proxy : error starting transaction: %s", "", err.Error())
 		return err
 	}
-	LogInfo("proxy : creating schema", "")
+	//LogInfo("proxy : creating schema", "")
 	for _, v := range schema {
 		if _, err := td.Exec(v); err != nil {
 			LogError("proxy : error executing query %s: %s", "", v, err.Error())
@@ -152,7 +153,7 @@ func (d *Db) Create() error {
 			return err
 		}
 	}
-	LogInfo("proxy : loading default data", "")
+	//LogInfo("proxy : loading default data", "")
 	for _, v := range data {
 		if _, err := td.Exec(v); err != nil {
 			LogError("proxy : error executing query %s: %s", "", v, err.Error())
@@ -169,7 +170,7 @@ func (d *Db) Create() error {
 Close - the closing of the database.
 */
 func (d *Db) Close() {
-	LogInfo("proxy : closing database file on path %s", "", dbPath)
+	//LogInfo("proxy : closing database file on path %s", "", dbPath)
 	_ = d.handle.Close()
 }
 
